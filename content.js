@@ -115,7 +115,7 @@ window.SITE_CONTENT = {
       },
       {
         label: { zh: "GitHub", en: "GitHub" },
-        url: "https://github.com/cdx000802-pixel",
+        url: "https://github.com/chendx0802",
       },
       {
         label: { zh: "Google Scholar", en: "Google Scholar" },
