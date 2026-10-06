@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="陈丁熊的个人学术主页，展示研究方向、教育经历、项目与论文。"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>Dingxiong Chen · 陈丁熊</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css?v=20261002-7" />
+    <script src="content.js?v=20261006-2" defer></script>
+    <script src="script.js?v=20261006-1" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到正文</a>
+
+    <div class="page-shell">
+      <header class="site-header" aria-label="页面控制">
+        <div class="display-controls">
+          <button class="control-button" id="language-toggle" type="button">
+            EN
+          </button>
+          <button
+            class="control-button icon-button"
+            id="theme-toggle"
+            type="button"
+            aria-label="切换深色模式"
+          >
+            <span aria-hidden="true">◐</span>
+          </button>
+        </div>
+      </header>
+
+      <main id="main">
+        <section class="hero" id="top" aria-labelledby="page-title">
+          <div class="hero-copy">
+            <h1 id="page-title"></h1>
+            <a class="mbti-link" id="profile-mbti" href="#" target="_blank" rel="noreferrer">
+              <span class="mbti-mark" aria-hidden="true">◆</span>
+              <span id="profile-mbti-label"></span>
+              <span class="mbti-arrow" aria-hidden="true">↗</span>
+            </a>
+            <div class="hero-statements" id="profile-statements"></div>
+            <div class="bio" id="profile-bio"></div>
+            <nav class="profile-links" id="profile-links" aria-label="个人链接"></nav>
+          </div>
+          <figure class="portrait-wrap">
+            <div class="portrait-decoration" aria-hidden="true"></div>
+            <img id="profile-photo" src="" alt="" width="720" height="900" />
+            <figcaption id="profile-caption"></figcaption>
+          </figure>
+        </section>
+
+        <section class="content-section" id="activities" aria-labelledby="activities-title">
+          <div class="section-label" aria-hidden="true">01</div>
+          <div class="section-body">
+            <h2 id="activities-title"></h2>
+            <div class="activity-list" id="activity-list"></div>
+          </div>
+        </section>
+
+        <section class="content-section" id="publications" aria-labelledby="publications-title">
+          <div class="section-label" aria-hidden="true">02</div>
+          <div class="section-body">
+            <div class="section-heading-row">
+              <h2 id="publications-title"></h2>
+              <p class="section-note" id="publications-note"></p>
+            </div>
+            <div class="publication-list" id="publication-list"></div>
+          </div>
+        </section>
+
+        <section class="content-section" id="education" aria-labelledby="education-title">
+          <div class="section-label" aria-hidden="true">03</div>
+          <div class="section-body">
+            <h2 id="education-title"></h2>
+            <div class="timeline" id="education-list"></div>
+          </div>
+        </section>
+
+        <section class="content-section" id="experience" aria-labelledby="experience-title">
+          <div class="section-label" aria-hidden="true">04</div>
+          <div class="section-body">
+            <h2 id="experience-title"></h2>
+            <div class="timeline" id="experience-list"></div>
+          </div>
+        </section>
+
+        <section class="content-section" id="contact" aria-labelledby="contact-title">
+          <div class="section-label" aria-hidden="true">05</div>
+          <div class="section-body contact-layout">
+            <div class="contact-intro">
+              <h2 id="contact-title"></h2>
+              <p id="contact-description"></p>
+              <p class="privacy-note" id="contact-privacy"></p>
+            </div>
+
+            <form class="message-form" id="message-form" novalidate>
+              <label class="form-field" for="visitor-name">
+                <span id="name-label"></span>
+                <input
+                  id="visitor-name"
+                  name="name"
+                  type="text"
+                  maxlength="60"
+                  autocomplete="name"
+                  required
+                />
+              </label>
+
+              <label class="form-field" for="visitor-message">
+                <span id="message-label"></span>
+                <textarea
+                  id="visitor-message"
+                  name="message"
+                  rows="6"
+                  minlength="2"
+                  maxlength="1000"
+                  required
+                ></textarea>
+              </label>
+
+              <input id="message-subject" name="_subject" type="hidden" />
+
+              <div class="form-actions">
+                <button class="submit-button" id="message-submit" type="submit"></button>
+                <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+              </div>
+            </form>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <p id="footer-copyright"></p>
+        <p id="footer-update"></p>
+      </footer>
+    </div>
+
+    <noscript>
+      <p class="noscript-message">请启用 JavaScript 以显示网站内容。</p>
+    </noscript>
+  </body>
+</html>
