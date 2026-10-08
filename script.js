@@ -1,10 +1,8 @@
 const content = window.SITE_CONTENT;
 
 const state = {
-  lang: localStorage.getItem("site-language") || "zh",
-  theme:
-    localStorage.getItem("site-theme") ||
-    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"),
+  lang: "en",
+  theme: "dark",
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -225,13 +223,11 @@ function applyTheme() {
 
 $("#language-toggle").addEventListener("click", () => {
   state.lang = state.lang === "zh" ? "en" : "zh";
-  localStorage.setItem("site-language", state.lang);
   render();
 });
 
 $("#theme-toggle").addEventListener("click", () => {
   state.theme = state.theme === "dark" ? "light" : "dark";
-  localStorage.setItem("site-theme", state.theme);
   applyTheme();
 });
 

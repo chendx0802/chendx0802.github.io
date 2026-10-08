@@ -121,7 +121,7 @@ window.SITE_CONTENT = {
         label: { zh: "Google Scholar", en: "Google Scholar" },
         url: "https://scholar.google.com/",
       },
-      { label: { zh: "简历", en: "CV" }, url: "#" },
+      { label: { zh: "联系我", en: "Contact Me" }, url: "#contact" },
     ],
   },
 
