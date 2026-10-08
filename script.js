@@ -170,6 +170,7 @@ function renderTimeline(target, items) {
             <h3>${organizationMarkup}</h3>
             <p class="timeline-role">${escapeHtml(localized(item.role))}</p>
             ${localized(item.details) ? `<p class="timeline-details">${escapeHtml(localized(item.details))}</p>` : ""}
+            ${item.advisors ? `<p class="timeline-details timeline-advisors">${renderRichText(item.advisors)}</p>` : ""}
           </div>
         </article>`;
     })

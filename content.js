@@ -218,6 +218,20 @@ window.SITE_CONTENT = {
         zh: "研究方向：空中具身智能",
         en: "Research Area: Aerial Embodied Intelligence",
       },
+      advisors: {
+        parts: [
+          { text: { zh: "导师：", en: "Advisors: " } },
+          {
+            label: { zh: "金露", en: "Jin Lu" },
+            url: "https://teacher.njust.edu.cn/jsj/jl/list.htm",
+          },
+          { text: { zh: "、", en: " and " } },
+          {
+            label: { zh: "程健", en: "Jian Cheng" },
+            url: "https://ia.cas.cn/rcdw/yjy/202404/t20240422_7129847.html",
+          },
+        ],
+      },
       logos: [
         {
           src: "assets/logos/njust.png?v=20261002-2",
@@ -241,6 +255,15 @@ window.SITE_CONTENT = {
         zh: "研究方向：具身智能与机器人运动控制",
         en: "Research Area: Embodied Intelligence and Robot Motion Control",
       },
+      advisors: {
+        parts: [
+          { text: { zh: "导师：", en: "Advisor: " } },
+          {
+            label: { zh: "周旺平教授", en: "Prof. Wangping Zhou" },
+            url: "https://faculty.nuist.edu.cn/zhouwangping/zh_CN/index/50353/list/index.htm",
+          },
+        ],
+      },
       url: "https://www.nuist.edu.cn/",
       logos: [
         {
@@ -256,6 +279,15 @@ window.SITE_CONTENT = {
       organization: { zh: "南京信息工程大学", en: "Nanjing University of Information Science and Technology" },
       role: { zh: "学士 · 电气工程及其自动化", en: "B.Eng. in Electrical Engineering and Automation" },
       details: { zh: "", en: "" },
+      advisors: {
+        parts: [
+          { text: { zh: "导师：", en: "Advisor: " } },
+          {
+            label: { zh: "周旺平教授", en: "Prof. Wangping Zhou" },
+            url: "https://faculty.nuist.edu.cn/zhouwangping/zh_CN/index/50353/list/index.htm",
+          },
+        ],
+      },
       url: "https://www.nuist.edu.cn/",
       logos: [
         {
