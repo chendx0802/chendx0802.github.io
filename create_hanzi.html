@@ -1,0 +1,1427 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="中英文文字与自由手写轨迹生成器，支持黑板坐标预览、可调等待点数、等待时间估算和 JSON 导出。">
+  <meta name="theme-color" content="#176443">
+  <title>汉字轨迹工作台 · 文字生成与自由手写</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f1ea;
+      --panel: #fffdf8;
+      --ink: #222a25;
+      --muted: #68736b;
+      --line: #d9dfd6;
+      --board: #173f32;
+      --stroke: #f5efe2;
+      --move: #f1a95b;
+      --accent: #176443;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; min-width: 320px; background: var(--paper); color: var(--ink); font-family: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif; }
+    main { width: min(1400px, calc(100% - 40px)); margin: 0 auto; padding: 30px 0 22px; }
+    .app-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+    .eyebrow { margin: 0 0 8px; font-size: 12px; color: var(--accent); font-weight: 700; letter-spacing: .12em; }
+    h1 { margin: 0; font-size: clamp(25px, 3.4vw, 38px); letter-spacing: -.03em; }
+    .intro { margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .board-badge { padding: 12px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--muted); font-size: 12px; white-space: nowrap; line-height: 1.7; }
+    .board-badge strong { display: block; font-size: 18px; color: var(--ink); }
+    .mode-bar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+    .mode-tabs { display: flex; padding: 4px; gap: 4px; background: #e6eae3; border-radius: 12px; }
+    button { border: 1px solid #c8d0c5; background: #fff; color: var(--ink); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+    button:hover:not(:disabled) { border-color: var(--accent); background: #f2f7f0; }
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #86b598; outline-offset: 2px; }
+    .mode-tab { display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; padding: 11px 22px; background: transparent; color: var(--muted); }
+    .mode-tab[aria-selected="true"] { background: var(--panel); color: var(--accent); box-shadow: 0 2px 5px #163f3212; }
+    .mode-tab svg { width: 18px; height: 18px; }
+    .mode-hint { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .wait-settings { min-width: 0; margin: 0 0 20px; padding: 15px 18px 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .wait-settings legend { padding: 0 7px; font-size: 13px; font-weight: 700; }
+    .wait-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(260px, 1.35fr); gap: 18px; align-items: center; }
+    .wait-grid .field { margin: 0; }
+    .wait-times { display: block; background: #edf3ee; border-radius: 8px; padding: 10px 14px; white-space: pre-line; font: 12px/1.65 Consolas, "Microsoft YaHei UI", monospace; color: #28543b; }
+    .wait-times.error { color: #9d2e20; background: #f9e7e2; }
+    .wait-note { margin: 11px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .layout, .frame { display: grid; grid-template-columns: 310px minmax(0, 1fr); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); box-shadow: 0 12px 36px #173f3208; }
+    aside { padding: 20px; border-right: 1px solid var(--line); }
+    .field { display: grid; gap: 7px; margin-bottom: 14px; }
+    label, .field-title { font-size: 12px; color: var(--muted); font-weight: 650; line-height: 1.6; }
+    input[type="number"], input[type="text"] { width: 100%; min-width: 0; height: 40px; padding: 0 10px; border: 1px solid #c8d0c5; border-radius: 8px; font: inherit; font-size: 14px; background: #fff; color: var(--ink); }
+    input[type="text"] { font-size: 22px; font-family: SimSun, "Songti SC", serif; }
+    input:focus { border-color: var(--accent); }
+    input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; flex: 0 0 auto; }
+    .numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+    .check, .checks label { display: flex; align-items: center; gap: 8px; margin: 9px 0; font-size: 13px; font-weight: 400; color: var(--ink); cursor: pointer; }
+    .checks { margin: 15px 0 18px; }
+    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 18px; }
+    .buttons button { min-height: 42px; }
+    button.primary, button.download { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.primary:hover:not(:disabled), button.download:hover:not(:disabled) { background: #105436; }
+    #mode-write .buttons button.primary, #mode-write .buttons button.download { grid-column: 1 / -1; }
+    .status, #write-status { min-height: 102px; margin-top: 18px; padding: 12px; border-left: 3px solid var(--accent); border-radius: 8px; background: #edf3ee; white-space: pre-line; font: 12px/1.7 Consolas, "Microsoft YaHei UI", monospace; color: #355240; overflow-wrap: anywhere; }
+    .status.error, #write-status.error { color: #9d2e20; border-color: #c94b36; background: #f9e7e2; }
+    .hint { font-size: 12px; line-height: 1.6; color: var(--muted); }
+    .notes { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); line-height: 1.75; }
+    summary { cursor: pointer; font-weight: 650; color: var(--ink); }
+    .note, .instructions { padding-top: 9px; }
+    .preview { min-width: 0; padding: 20px; display: flex; flex-direction: column; }
+    .preview-head, .workspace-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+    .preview-head strong, .workspace-head strong { font-size: 14px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); }
+    .key { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 22px; border-top: 3px solid var(--stroke); filter: drop-shadow(0 0 1px #777); }
+    .swatch.move { border-top: 2px dashed var(--move); }
+    canvas { display: block; width: 100%; border-radius: 10px; }
+    #text-canvas { height: clamp(470px, 64vh, 760px); background: var(--board); flex: 1; min-height: 470px; }
+    .workspace { min-width: 0; }
+    .workspace-head { min-height: 58px; padding: 14px 18px; margin: 0; border-bottom: 1px solid var(--line); }
+    #write-coordinate { color: var(--muted); font: 12px/1.6 Consolas, "Microsoft YaHei UI", monospace; }
+    .canvas-wrap { height: clamp(520px, 66vh, 780px); padding: 10px; background: #deddd2; }
+    .write-legend { padding: 10px 18px; }
+    #write-board { height: 100%; cursor: crosshair; touch-action: none; user-select: none; -webkit-user-select: none; }
+    .page-footer { margin: 15px 0 0; text-align: center; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    @media (max-width: 1060px) { .wait-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .wait-times { grid-column: 1 / -1; } }
+    @media (max-width: 850px) { main { width: calc(100% - 24px); padding: 20px 0; } .app-header { align-items: flex-start; } .board-badge { padding: 9px 12px; } .layout, .frame { grid-template-columns: 1fr; } aside { border-right: 0; border-bottom: 1px solid var(--line); } .mode-bar { align-items: flex-start; flex-direction: column; gap: 10px; } .preview-head { align-items: flex-start; flex-direction: column; gap: 8px; } #text-canvas { min-height: 420px; height: 55vh; } .canvas-wrap { min-height: 420px; height: 60vh; } }
+    @media (max-width: 520px) { .app-header { flex-direction: column; gap: 12px; margin-bottom: 18px; } .board-badge { width: 100%; display: flex; align-items: center; gap: 14px; } .board-badge strong { font-size: 16px; } .mode-tabs { width: 100%; } .mode-tab { flex: 1; padding: 10px; } .wait-grid { grid-template-columns: 1fr 1fr; gap: 12px; } .frequency-field { grid-column: 1 / -1; } .wait-settings { padding: 12px; } aside, .preview { padding: 15px; } .workspace-head { align-items: flex-start; flex-direction: column; gap: 5px; } .canvas-wrap { min-height: 360px; padding: 5px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">黑板坐标系 C · 轨迹生成</p>
+        <h1>汉字轨迹工作台</h1>
+        <p class="intro">从文字到轨迹，也可以亲手写下每一笔。调整参数、查看坐标，再导出有序点。</p>
+      </div>
+      <div class="board-badge"><strong>1.50 × 0.90 m</strong>原点在右下 · +y 向左 · +z 向上</div>
+    </header>
+    <div class="mode-bar">
+      <div class="mode-tabs" role="tablist" aria-label="轨迹生成模式">
+        <button id="tab-text" class="mode-tab" type="button" role="tab" aria-selected="true" aria-controls="mode-text" data-mode="text" tabindex="0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 5h16M12 5v15M8 20h8M7 9h10"/></svg>文字生成
+        </button>
+        <button id="tab-write" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="mode-write" data-mode="write" tabindex="-1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m15 4 5 5M4 20l5-1L20 8a2 2 0 0 0-4-4L5 15l-1 5Z"/></svg>自由手写
+        </button>
+      </div>
+      <p id="modeHint" class="mode-hint">输入中英文，按笔画顺序生成轨迹。</p>
+    </div>
+    <fieldset class="wait-settings">
+      <legend>两个模式共用 · 每笔起点等待</legend>
+      <div class="wait-grid">
+        <div class="field"><label for="penUpHoldCount">前面新增点数 · pen_down=false</label><input id="penUpHoldCount" type="number" value="150" min="0" step="1"></div>
+        <div class="field"><label for="penDownHoldCount">后面新增点数 · pen_down=true</label><input id="penDownHoldCount" type="number" value="100" min="0" step="1"></div>
+        <div class="field frequency-field"><label for="publishFrequency">发布频率（Hz）</label><input id="publishFrequency" type="number" value="50" min="0.001" step="any"></div>
+        <output id="waitTimes" class="wait-times" aria-live="polite"></output>
+      </div>
+      <p class="wait-note">等待时间 = 新增点数 ÷ 发布频率，按每个周期发布 1 个点估算。点数可设为 0；文字模式修改后重新生成，手写模式用于随后开始的新笔画。切换模式会保留各自轨迹。</p>
+    </fieldset>
+    <section id="mode-text" role="tabpanel" aria-labelledby="tab-text">
+      <div class="layout">
+      <aside>
+        <div class="field">
+          <label for="text-text">文字（中英文混写，最多 10 个）</label>
+          <input id="text-text" type="text" value="方寸" maxlength="10" autocomplete="off">
+        </div>
+
+        <div class="numbers">
+          <div class="field">
+            <label for="text-size">字高 / m</label>
+            <input id="text-size" type="number" value="0.050" min="0.005" max="0.8" step="0.005">
+          </div>
+          <div class="field">
+            <label for="text-gap">字间距 / m</label>
+            <input id="text-gap" type="number" value="0.015" min="0" max="1.5" step="0.005">
+          </div>
+          <div class="field">
+            <label for="text-centerY">中心 y_C / m</label>
+            <input id="text-centerY" type="number" value="0.750" min="0" max="1.5" step="0.01">
+          </div>
+          <div class="field">
+            <label for="text-centerZ">中心 z_C / m</label>
+            <input id="text-centerZ" type="number" value="0.450" min="0" max="0.9" step="0.01">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="text-step">采样点最大间距 / m</label>
+          <input id="text-step" type="number" value="0.002" min="0.0002" max="0.1" step="0.0005">
+        </div>
+
+        <label class="check">
+          <input id="text-zoom" type="checkbox" checked>
+          放大显示轨迹（仅预览）
+        </label>
+        <label class="check">
+          <input id="text-showPoints" type="checkbox" checked>
+          显示采样点
+        </label>
+        <label class="check">
+          <input id="text-showMoves" type="checkbox">
+          显示抬笔移动
+        </label>
+
+        <div class="buttons">
+          <button id="text-generate" class="primary" type="button">生成轨迹</button>
+          <button id="text-download" type="button">下载 JSON</button>
+        </div>
+
+        <div id="text-status" class="status" aria-live="polite"></div>
+        <details class="notes"><summary>坐标与字形说明</summary><div class="note">
+          黑板尺寸：y_C 方向 1.50 m，z_C 方向 0.90 m。x_C 固定为 0，原点在右下，
+          +y_C 在画面中向左，+z_C 向上。每一笔起点先抬笔、同点落笔，
+          中间笔画末点再输出同坐标的 <code>pen_down=false</code>；笔画间移动也按采样间距生成且保持抬笔。
+          整条轨迹先以 <code>pen_down=true</code> 完成最后书写点，再在同坐标追加一个
+          <code>pen_down=false</code> 的最终抬笔点。
+          中文轨迹字体为单线宋体：采用宋体结构和比例，但不生成粗笔画封闭外轮廓。
+          “方、寸、江、宁、南、京”使用内置宋体几何字形；其中“方”4笔、“寸”3笔、“江”6笔、
+          “宁”4笔、“南”9笔、“京”8笔；英文字母继续使用内置单线大写字形（小写输入自动映射）；
+          其他新汉字首次生成时需要联网读取笔画中线，
+          之后会缓存在浏览器中。
+        </div></details>
+      </aside>
+
+      <section class="preview">
+        <div class="preview-head">
+          <strong>轨迹预览</strong>
+          <div class="legend">
+            <span class="key"><span class="swatch"></span>固定线宽笔迹</span>
+            <span class="key"><span class="swatch move"></span>抬笔移动</span>
+          </div>
+        </div>
+        <canvas id="text-canvas"></canvas>
+      </section>
+    </div>
+    </section>
+    <section id="mode-write" role="tabpanel" aria-labelledby="tab-write" hidden>
+      <div class="frame">
+      <aside>
+        <div class="field">
+          <label for="write-pointStep">采样点最大间距（m）</label>
+          <input id="write-pointStep" type="number" value="0.002" min="0.0002" max="0.05" step="0.0005">
+          <div class="hint">默认 0.002 m。修改后只影响随后写入的新轨迹。</div>
+        </div>
+
+        <div class="checks">
+          <span class="field-title">预览选项</span>
+          <label><input id="write-showPoints" type="checkbox" checked> 显示采样点</label>
+          <label><input id="write-showMoves" type="checkbox" checked> 显示抬笔移动轨迹</label>
+          <label><input id="write-showGrid" type="checkbox" checked> 显示 0.1 m 网格</label>
+        </div>
+
+        <div class="buttons">
+          <button id="write-undo" type="button">撤销上一笔</button>
+          <button id="write-clear" type="button">清空</button>
+          <button id="write-finish" class="primary" type="button">完成并校验轨迹</button>
+          <button id="write-download" class="download" type="button">下载 points_c_write.json</button>
+        </div>
+
+        <div id="write-status" role="status" aria-live="polite">尚未写入轨迹。</div>
+
+        <details class="notes"><summary>坐标与书写说明</summary><div class="instructions">
+          <strong>黑板系 C：</strong>尺寸固定为 y<sub>C</sub> 方向 1.50 m、z<sub>C</sub> 方向 0.90 m，
+          x<sub>C</sub> 固定为 0；原点 O<sub>C</sub> 位于右下角，+y<sub>C</sub> 向左，+z<sub>C</sub> 向上。<br><br>
+          每笔开始时先输出 <code>pen_down=false</code>，随后同坐标落笔；每笔末端在同坐标抬笔。
+          笔画间的移动会采样并设为 <code>false</code>，最后一点固定为同坐标最终抬笔点。
+        </div></details>
+      </aside>
+
+      <section class="workspace">
+        <div class="workspace-head">
+          <strong>1.50 m × 0.90 m 黑板</strong>
+          <span id="write-coordinate">指针未进入黑板</span>
+        </div>
+        <div class="legend write-legend" aria-label="手写轨迹图例">
+          <span class="key"><span class="swatch"></span>落笔书写</span>
+          <span class="key"><span class="swatch move"></span>抬笔移动</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="write-board" aria-label="可手写的黑板坐标系画布"></canvas>
+        </div>
+      </section>
+    </div>
+    </section>
+    <p class="page-footer">坐标单位：米 · x_C 固定为 0 · 每笔先抬笔等待、同点落笔等待，再开始书写</p>
+  </main>
+  <script>
+  (() => {
+    "use strict";
+    const tabs = [...document.querySelectorAll(".mode-tab")];
+    const descriptions = {
+      text: "输入中英文，按笔画顺序生成轨迹。",
+      write: "按住指针拖动自由书写；松开后可继续下一笔。"
+    };
+    function selectMode(mode) {
+      const selected = tabs.find((tab) => tab.dataset.mode === mode);
+      if (!selected || selected.getAttribute("aria-selected") === "true") return false;
+      if (!document.dispatchEvent(new CustomEvent("hanzi-before-mode-change", { cancelable: true, detail: mode }))) return false;
+      for (const tab of tabs) {
+        const active = tab.dataset.mode === mode;
+        tab.setAttribute("aria-selected", String(active));
+        tab.tabIndex = active ? 0 : -1;
+        document.getElementById("mode-" + tab.dataset.mode).hidden = !active;
+      }
+      document.getElementById("modeHint").textContent = descriptions[mode];
+      requestAnimationFrame(() => document.dispatchEvent(new CustomEvent("hanzi-mode-change", { detail: mode })));
+      return true;
+    }
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => selectMode(tab.dataset.mode));
+      tab.addEventListener("keydown", (event) => {
+        let next;
+        if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+        else if (event.key === "ArrowLeft") next = (index + tabs.length - 1) % tabs.length;
+        else if (event.key === "Home") next = 0;
+        else if (event.key === "End") next = tabs.length - 1;
+        else return;
+        event.preventDefault();
+        if (selectMode(tabs[next].dataset.mode)) tabs[next].focus();
+      });
+    });
+  })();
+  </script>
+  <script>
+  // 文字生成：保留 eazy.html 的字形、采样和导出逻辑。
+  (() => {
+
+    "use strict";
+
+    const BOARD_Y = 1.5;
+    const BOARD_Z = 0.9;
+    const DATA_VERSION = "2.0.1";
+    const dataUrl = (character) =>
+      "https://cdn.jsdelivr.net/npm/hanzi-writer-data@" +
+      DATA_VERSION + "/" + encodeURIComponent(character) + ".json";
+
+    // 离线单线宋体几何字形：保留标准印刷字结构，横线严格等高、竖线严格等横坐标。
+    // 复合笔画只保留横钩、竖钩所必需的结构转折，不加入曲线或装饰性笔锋。
+    const SIMPLE_GLYPHS = {
+      "方": [
+        [[-0.100, 0.460], [0.060, 0.320]],
+        [[-0.420, 0.240], [0.420, 0.240]],
+        [[-0.087879, 0.100], [0.300, 0.100], [0.300, -0.380], [0.160, -0.300]],
+        [[-0.020, 0.240], [-0.340, -0.420]]
+      ],
+      // 执行顺序：横（左到右）→ 点（方向不变）→ 竖钩（钩端到顶部）。
+      "寸": [
+        [[-0.420, 0.220], [0.420, 0.220]],
+        [[-0.220, 0.020], [-0.080, -0.120]],
+        [[-0.040, -0.300], [0.100, -0.380], [0.100, 0.420]]
+      ],
+      "江": [
+        [[-0.400, 0.420], [-0.280, 0.300]],
+        [[-0.420, 0.100], [-0.300, 0.000]],
+        [[-0.420, -0.340], [-0.250, -0.180]],
+        [[-0.080, 0.300], [0.420, 0.300]],
+        [[0.160, 0.300], [0.160, -0.340]],
+        [[-0.100, -0.340], [0.420, -0.340]]
+      ],
+      "宁": [
+        [[-0.140, 0.400], [-0.010, 0.320]],
+        [[-0.450, 0.170], [-0.450, 0.250], [0.450, 0.250], [0.450, 0.150]],
+        [[-0.360, 0.120], [0.340, 0.120]],
+        [[0.010, 0.120], [0.010, -0.380], [-0.120, -0.300]]
+      ],
+      "南": [
+        [[-0.320, 0.440], [0.320, 0.440]],
+        [[0.000, 0.500], [0.000, 0.310]],
+        [[-0.420, 0.300], [-0.420, -0.460]],
+        [[-0.420, 0.300], [0.420, 0.300], [0.420, -0.460], [0.320, -0.380]],
+        [[-0.140, 0.170], [-0.050, 0.080]],
+        [[0.140, 0.170], [0.050, 0.080]],
+        [[-0.240, 0.020], [0.240, 0.020]],
+        [[-0.260, -0.160], [0.260, -0.160]],
+        [[0.000, 0.040], [0.000, -0.380]]
+      ],
+      "京": [
+        [[-0.100, 0.480], [0.030, 0.400]],
+        [[-0.380, 0.320], [0.380, 0.320]],
+        [[-0.260, 0.200], [-0.260, -0.060]],
+        [[-0.260, 0.200], [0.280, 0.200], [0.280, -0.060]],
+        [[-0.260, -0.060], [0.280, -0.060]],
+        [[0.000, -0.060], [0.000, -0.440], [-0.100, -0.360]],
+        [[-0.120, -0.200], [-0.350, -0.460]],
+        [[0.140, -0.200], [0.360, -0.440]]
+      ]
+    };
+
+    // 固定线宽的 A-Z 单线字形；小写输入使用对应的大写几何字形。
+    const LATIN_GLYPHS = {
+      A: [[[-0.40, -0.50], [0.00, 0.50], [0.40, -0.50]], [[-0.22, 0.00], [0.22, 0.00]]],
+      B: [[[-0.35, 0.50], [-0.35, -0.50]], [[-0.35, 0.50], [0.12, 0.50], [0.35, 0.30], [0.12, 0.05], [-0.35, 0.05]], [[-0.35, 0.05], [0.15, 0.05], [0.38, -0.20], [0.15, -0.50], [-0.35, -0.50]]],
+      C: [[[0.40, 0.36], [0.20, 0.50], [-0.18, 0.50], [-0.40, 0.28], [-0.40, -0.28], [-0.18, -0.50], [0.20, -0.50], [0.40, -0.36]]],
+      D: [[[-0.35, 0.50], [-0.35, -0.50]], [[-0.35, 0.50], [0.10, 0.50], [0.40, 0.25], [0.40, -0.25], [0.10, -0.50], [-0.35, -0.50]]],
+      E: [[[-0.35, 0.50], [-0.35, -0.50]], [[-0.35, 0.50], [0.40, 0.50]], [[-0.35, 0.00], [0.25, 0.00]], [[-0.35, -0.50], [0.40, -0.50]]],
+      F: [[[-0.35, 0.50], [-0.35, -0.50]], [[-0.35, 0.50], [0.40, 0.50]], [[-0.35, 0.00], [0.25, 0.00]]],
+      G: [[[0.40, 0.34], [0.20, 0.50], [-0.18, 0.50], [-0.40, 0.28], [-0.40, -0.28], [-0.18, -0.50], [0.22, -0.50], [0.40, -0.28], [0.40, 0.00], [0.08, 0.00]]],
+      H: [[[-0.38, 0.50], [-0.38, -0.50]], [[0.38, 0.50], [0.38, -0.50]], [[-0.38, 0.00], [0.38, 0.00]]],
+      I: [[[-0.35, 0.50], [0.35, 0.50]], [[0.00, 0.50], [0.00, -0.50]], [[-0.35, -0.50], [0.35, -0.50]]],
+      J: [[[-0.20, 0.50], [0.38, 0.50]], [[0.20, 0.50], [0.20, -0.30], [0.05, -0.50], [-0.22, -0.50], [-0.38, -0.30]]],
+      K: [[[-0.38, 0.50], [-0.38, -0.50]], [[0.38, 0.50], [-0.38, -0.05]], [[-0.08, 0.18], [0.40, -0.50]]],
+      L: [[[-0.35, 0.50], [-0.35, -0.50], [0.40, -0.50]]],
+      M: [[[-0.40, -0.50], [-0.40, 0.50], [0.00, -0.05], [0.40, 0.50], [0.40, -0.50]]],
+      N: [[[-0.38, -0.50], [-0.38, 0.50], [0.38, -0.50], [0.38, 0.50]]],
+      O: [[[0.18, 0.50], [-0.18, 0.50], [-0.40, 0.28], [-0.40, -0.28], [-0.18, -0.50], [0.18, -0.50], [0.40, -0.28], [0.40, 0.28], [0.18, 0.50]]],
+      P: [[[-0.35, -0.50], [-0.35, 0.50]], [[-0.35, 0.50], [0.12, 0.50], [0.38, 0.28], [0.12, 0.02], [-0.35, 0.02]]],
+      Q: [[[0.18, 0.50], [-0.18, 0.50], [-0.40, 0.28], [-0.40, -0.28], [-0.18, -0.50], [0.18, -0.50], [0.40, -0.28], [0.40, 0.28], [0.18, 0.50]], [[0.08, -0.28], [0.42, -0.58]]],
+      R: [[[-0.35, -0.50], [-0.35, 0.50]], [[-0.35, 0.50], [0.12, 0.50], [0.38, 0.28], [0.12, 0.02], [-0.35, 0.02]], [[-0.05, 0.02], [0.40, -0.50]]],
+      S: [[[0.38, 0.34], [0.18, 0.50], [-0.18, 0.50], [-0.38, 0.28], [-0.20, 0.06], [0.20, -0.06], [0.38, -0.28], [0.18, -0.50], [-0.18, -0.50], [-0.38, -0.34]]],
+      T: [[[-0.42, 0.50], [0.42, 0.50]], [[0.00, 0.50], [0.00, -0.50]]],
+      U: [[[-0.38, 0.50], [-0.38, -0.25], [-0.18, -0.50], [0.18, -0.50], [0.38, -0.25], [0.38, 0.50]]],
+      V: [[[-0.42, 0.50], [0.00, -0.50], [0.42, 0.50]]],
+      W: [[[-0.45, 0.50], [-0.28, -0.50], [0.00, 0.05], [0.28, -0.50], [0.45, 0.50]]],
+      X: [[[-0.40, 0.50], [0.40, -0.50]], [[0.40, 0.50], [-0.40, -0.50]]],
+      Y: [[[-0.40, 0.50], [0.00, 0.00], [0.40, 0.50]], [[0.00, 0.00], [0.00, -0.50]]],
+      Z: [[[-0.40, 0.50], [0.40, 0.50], [-0.40, -0.50], [0.40, -0.50]]]
+    };
+
+    const el = {
+      text: document.getElementById("text-text"),
+      size: document.getElementById("text-size"),
+      gap: document.getElementById("text-gap"),
+      centerY: document.getElementById("text-centerY"),
+      centerZ: document.getElementById("text-centerZ"),
+      step: document.getElementById("text-step"),
+      penUpHoldCount: document.getElementById("penUpHoldCount"),
+      penDownHoldCount: document.getElementById("penDownHoldCount"),
+      publishFrequency: document.getElementById("publishFrequency"),
+      waitTimes: document.getElementById("waitTimes"),
+      zoom: document.getElementById("text-zoom"),
+      showPoints: document.getElementById("text-showPoints"),
+      showMoves: document.getElementById("text-showMoves"),
+      generate: document.getElementById("text-generate"),
+      download: document.getElementById("text-download"),
+      status: document.getElementById("text-status"),
+      canvas: document.getElementById("text-canvas")
+    };
+
+    const state = {
+      points: [],
+      bounds: null,
+      pending: false,
+      cache: new Map()
+    };
+
+    function readNumber(input, name, minimum, maximum) {
+      const result = Number(input.value);
+      if (!Number.isFinite(result) || result < minimum || result > maximum) {
+        throw new Error(name + "应在 " + minimum + " ~ " + maximum + " 之间");
+      }
+      return result;
+    }
+
+    function readHoldSettings() {
+      const readCount = (input, name) => {
+        const count = Number(input.value);
+        if (!input.value.trim() || !Number.isSafeInteger(count) || count < 0) {
+          throw new Error(name + "必须是大于等于 0 的整数");
+        }
+        return count;
+      };
+      const upHoldCount = readCount(el.penUpHoldCount, "前面新增点数");
+      const downHoldCount = readCount(el.penDownHoldCount, "后面新增点数");
+      const publishFrequency = Number(el.publishFrequency.value);
+      if (!Number.isFinite(publishFrequency) || publishFrequency <= 0) {
+        throw new Error("发布频率必须大于 0 Hz");
+      }
+      return { upHoldCount, downHoldCount, publishFrequency };
+    }
+
+    function updateWaitTimes() {
+      try {
+        const hold = readHoldSettings();
+        const before = hold.upHoldCount / hold.publishFrequency;
+        const after = hold.downHoldCount / hold.publishFrequency;
+        el.waitTimes.textContent =
+          "前面抬笔等待：" + before.toFixed(3) + " s\n" +
+          "后面落笔等待：" + after.toFixed(3) + " s\n" +
+          "每笔新增等待合计：" + (before + after).toFixed(3) + " s";
+        el.waitTimes.classList.toggle("error", false);
+      } catch (error) {
+        el.waitTimes.textContent = error.message;
+        el.waitTimes.classList.toggle("error", true);
+      }
+    }
+
+    function readSettings() {
+      const characters = [...el.text.value.replace(/\s/g, "")];
+      if (!characters.length) throw new Error("请至少输入一个中文或英文字母");
+      if (characters.length > 10) throw new Error("一次最多生成 10 个字符");
+
+      return {
+        characters,
+        size: readNumber(el.size, "字高", 0.005, 0.8),
+        gap: readNumber(el.gap, "字间距", 0, BOARD_Y),
+        centerY: readNumber(el.centerY, "中心 y_C", 0, BOARD_Y),
+        centerZ: readNumber(el.centerZ, "中心 z_C", 0, BOARD_Z),
+        step: readNumber(el.step, "采样间距", 0.0002, 0.1),
+        hold: readHoldSettings()
+      };
+    }
+
+    function storageKey(character) {
+      return "aerial-writing-hanzi-" + DATA_VERSION + ":" + character;
+    }
+
+    function readStored(character) {
+      try {
+        const item = localStorage.getItem(storageKey(character));
+        return item ? JSON.parse(item) : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function store(character, data) {
+      try {
+        localStorage.setItem(storageKey(character), JSON.stringify(data));
+      } catch (_) {}
+    }
+
+    function validateCharacterData(character, data) {
+      if (!data || !Array.isArray(data.medians) || !data.medians.length) {
+        throw new Error("没有找到“" + character + "”的笔画中线数据");
+      }
+      return data;
+    }
+
+    async function characterData(character) {
+      if (state.cache.has(character)) return state.cache.get(character);
+
+      const cached = readStored(character);
+      if (cached) {
+        const data = validateCharacterData(character, cached);
+        state.cache.set(character, data);
+        return data;
+      }
+
+      let response;
+      try {
+        response = await fetch(dataUrl(character), { cache: "force-cache" });
+      } catch (_) {
+        throw new Error("无法读取“" + character + "”的笔画数据，请检查网络连接");
+      }
+      if (!response.ok) {
+        throw new Error("无法读取“" + character + "”的笔画数据（HTTP " + response.status + "）");
+      }
+
+      const data = validateCharacterData(character, await response.json());
+      store(character, data);
+      state.cache.set(character, data);
+      return data;
+    }
+
+    function rawBounds(strokes) {
+      const all = strokes.flat();
+      const xs = all.map((point) => Number(point[0]));
+      const ys = all.map((point) => Number(point[1]));
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      return {
+        centerX: (minX + maxX) / 2,
+        centerY: (minY + maxY) / 2,
+        span: Math.max(maxX - minX, maxY - minY, 1e-9)
+      };
+    }
+
+    // 将其他汉字的笔画中线转换为单线宋体风格：保留较细的折笔变化和印刷字比例，
+    // 只删除极小抖动，并校正非常接近横、竖方向的笔段。笔画数量与顺序不变。
+    function pointLineDistance(point, start, end) {
+      const dx = end[0] - start[0];
+      const dy = end[1] - start[1];
+      const lengthSquared = dx * dx + dy * dy;
+      if (lengthSquared <= 1e-12) return Math.hypot(point[0] - start[0], point[1] - start[1]);
+      const ratio = Math.max(0, Math.min(1,
+        ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / lengthSquared
+      ));
+      return Math.hypot(
+        point[0] - (start[0] + ratio * dx),
+        point[1] - (start[1] + ratio * dy)
+      );
+    }
+
+    function simplifyPolyline(points, tolerance = 0.006) {
+      if (points.length <= 2) return points.map((point) => [...point]);
+      let farthestIndex = -1;
+      let farthestDistance = tolerance;
+      for (let index = 1; index < points.length - 1; index += 1) {
+        const distance = pointLineDistance(points[index], points[0], points[points.length - 1]);
+        if (distance > farthestDistance) {
+          farthestDistance = distance;
+          farthestIndex = index;
+        }
+      }
+      if (farthestIndex < 0) return [[...points[0]], [...points[points.length - 1]]];
+      const left = simplifyPolyline(points.slice(0, farthestIndex + 1), tolerance);
+      const right = simplifyPolyline(points.slice(farthestIndex), tolerance);
+      return left.slice(0, -1).concat(right);
+    }
+
+    function songtiStroke(points) {
+      const simplified = simplifyPolyline(points);
+      const result = [[...simplified[0]]];
+      for (let index = 1; index < simplified.length; index += 1) {
+        const previous = result[result.length - 1];
+        const current = [...simplified[index]];
+        const dx = current[0] - previous[0];
+        const dy = current[1] - previous[1];
+        if (Math.abs(dy) <= Math.abs(dx) * 0.10) current[1] = previous[1];
+        else if (Math.abs(dx) <= Math.abs(dy) * 0.10) current[0] = previous[0];
+        if (Math.hypot(current[0] - previous[0], current[1] - previous[1]) > 1e-6) {
+          result.push(current);
+        }
+      }
+      return result;
+    }
+
+    async function glyphStrokes(character) {
+      if (SIMPLE_GLYPHS[character]) return SIMPLE_GLYPHS[character];
+      const latinGlyph = LATIN_GLYPHS[character.toUpperCase()];
+      if (latinGlyph) return latinGlyph;
+
+      const data = await characterData(character);
+      const box = rawBounds(data.medians);
+      return data.medians.map((stroke) => songtiStroke(
+        stroke.map((point) => [
+          (Number(point[0]) - box.centerX) / box.span,
+          (Number(point[1]) - box.centerY) / box.span
+        ])
+      ));
+    }
+
+    function addPoint(points, y, z, penDown, label) {
+      points.push({
+        x: 0,
+        y: Number(y.toFixed(6)),
+        z: Number(z.toFixed(6)),
+        pen_down: penDown,
+        label
+      });
+    }
+
+    function sampleSegment(points, start, end, step, penDown, label) {
+      const distance = Math.hypot(end.y - start.y, end.z - start.z);
+      const count = Math.max(1, Math.ceil(distance / step));
+      for (let index = 1; index <= count; index += 1) {
+        const ratio = index / count;
+        addPoint(
+          points,
+          start.y + (end.y - start.y) * ratio,
+          start.z + (end.z - start.z) * ratio,
+          penDown,
+          label
+        );
+      }
+    }
+
+    function mapStroke(rawStroke, centerY, centerZ, size) {
+      return rawStroke.map(([rawY, rawZ]) => ({
+        y: centerY - rawY * size,
+        z: centerZ + rawZ * size
+      }));
+    }
+
+    function calculateBounds(points) {
+      const ys = points.map((point) => point.y);
+      const zs = points.map((point) => point.z);
+      return {
+        minY: Math.min(...ys),
+        maxY: Math.max(...ys),
+        minZ: Math.min(...zs),
+        maxZ: Math.max(...zs)
+      };
+    }
+
+    function makeTrajectory(settings, glyphs) {
+      const points = [];
+      const count = settings.characters.length;
+
+      settings.characters.forEach((character, characterIndex) => {
+        const characterCenterY =
+          settings.centerY + (0.5 * (count - 1) - characterIndex) * (settings.size + settings.gap);
+
+        glyphs[characterIndex].forEach((rawStroke, strokeIndex) => {
+          const stroke = mapStroke(rawStroke, characterCenterY, settings.centerZ, settings.size);
+          const label = "char" + (characterIndex + 1) + "_stroke" + (strokeIndex + 1);
+
+          if (!points.length) {
+            addPoint(points, stroke[0].y, stroke[0].z, false, label + "_start");
+          } else {
+            const previousEnd = points[points.length - 1];
+            sampleSegment(
+              points,
+              previousEnd,
+              stroke[0],
+              settings.step,
+              false,
+              label + "_move"
+            );
+            points[points.length - 1].label = label + "_start";
+          }
+
+          // 在每笔起点按设置追加同坐标的抬笔、落笔等待点。
+          for (let hold = 0; hold < settings.hold.upHoldCount; hold += 1) {
+            points.push({ ...points[points.length - 1] });
+          }
+          addPoint(points, stroke[0].y, stroke[0].z, true, label + "_down");
+          for (let hold = 0; hold < settings.hold.downHoldCount; hold += 1) {
+            points.push({ ...points[points.length - 1] });
+          }
+
+          for (let index = 1; index < stroke.length; index += 1) {
+            sampleSegment(
+              points,
+              stroke[index - 1],
+              stroke[index],
+              settings.step,
+              true,
+              label
+            );
+          }
+          const end = stroke[stroke.length - 1];
+          addPoint(points, end.y, end.z, false, label + "_up");
+        });
+      });
+
+      if (points.length) {
+        const finalPoint = points[points.length - 1];
+        finalPoint.pen_down = true;
+        finalPoint.label = finalPoint.label.replace(/_up$/, "_end");
+        points.push({
+          ...finalPoint,
+          pen_down: false,
+          label: finalPoint.label.replace(/_end$/, "_final_up")
+        });
+      }
+
+      const outside = points.find((point) =>
+        point.y < 0 || point.y > BOARD_Y || point.z < 0 || point.z > BOARD_Z
+      );
+      if (outside) {
+        throw new Error(
+          "轨迹超出黑板：y_C=" + outside.y.toFixed(3) +
+          "，z_C=" + outside.z.toFixed(3) + " m"
+        );
+      }
+      return points;
+    }
+
+    function canvasScene() {
+      const rect = el.canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const pixelWidth = Math.max(1, Math.round(rect.width * ratio));
+      const pixelHeight = Math.max(1, Math.round(rect.height * ratio));
+      if (el.canvas.width !== pixelWidth || el.canvas.height !== pixelHeight) {
+        el.canvas.width = pixelWidth;
+        el.canvas.height = pixelHeight;
+      }
+      const context = el.canvas.getContext("2d");
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return { context, width: rect.width, height: rect.height };
+    }
+
+    function draw() {
+      if (document.getElementById("mode-text").hidden) return;
+      const { context, width, height } = canvasScene();
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = "#173f32";
+      context.fillRect(0, 0, width, height);
+
+      let range = { minY: 0, maxY: BOARD_Y, minZ: 0, maxZ: BOARD_Z };
+      if (el.zoom.checked && state.bounds) {
+        const marginY = Math.max(0.012, (state.bounds.maxY - state.bounds.minY) * 0.18);
+        const marginZ = Math.max(0.012, (state.bounds.maxZ - state.bounds.minZ) * 0.18);
+        range = {
+          minY: state.bounds.minY - marginY,
+          maxY: state.bounds.maxY + marginY,
+          minZ: state.bounds.minZ - marginZ,
+          maxZ: state.bounds.maxZ + marginZ
+        };
+      }
+
+      const padding = 38;
+      const scale = Math.min(
+        (width - padding * 2) / Math.max(range.maxY - range.minY, 1e-9),
+        (height - padding * 2) / Math.max(range.maxZ - range.minZ, 1e-9)
+      );
+      const drawingWidth = (range.maxY - range.minY) * scale;
+      const drawingHeight = (range.maxZ - range.minZ) * scale;
+      const left = (width - drawingWidth) / 2;
+      const top = (height - drawingHeight) / 2;
+      const pixel = (point) => ({
+        x: left + (range.maxY - point.y) * scale,
+        y: top + (range.maxZ - point.z) * scale
+      });
+
+      if (!el.zoom.checked) {
+        context.strokeStyle = "rgba(255,255,255,0.28)";
+        context.lineWidth = 1;
+        context.strokeRect(left, top, drawingWidth, drawingHeight);
+        context.fillStyle = "rgba(255,255,255,0.62)";
+        context.font = "12px Segoe UI, sans-serif";
+        context.fillText("1.50 m × 0.90 m", left + 10, top + 20);
+        context.fillText("O_C", left + drawingWidth - 28, top + drawingHeight - 10);
+      }
+
+      // 每段落笔线都使用同一个宽度；不读取压力，也不做起收笔渐变。
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      for (let index = 1; index < state.points.length; index += 1) {
+        const previous = pixel(state.points[index - 1]);
+        const current = pixel(state.points[index]);
+        const penDown = state.points[index].pen_down;
+        if (!penDown && !el.showMoves.checked) continue;
+
+        context.beginPath();
+        context.moveTo(previous.x, previous.y);
+        context.lineTo(current.x, current.y);
+        context.strokeStyle = penDown ? "#f5efe2" : "#f1a95b";
+        context.lineWidth = penDown ? 3 : 1.5;
+        context.setLineDash(penDown ? [] : [6, 5]);
+        context.stroke();
+      }
+      context.setLineDash([]);
+
+      if (el.showPoints.checked) {
+        const pointRadius = state.points.length > 500 ? 1 : 1.6;
+        state.points.forEach((point) => {
+          if (!point.pen_down) return;
+          const p = pixel(point);
+          context.beginPath();
+          context.arc(p.x, p.y, pointRadius, 0, Math.PI * 2);
+          context.fillStyle = "#d9513b";
+          context.fill();
+        });
+      }
+    }
+
+    function setStatus(message, error = false) {
+      el.status.textContent = message;
+      el.status.classList.toggle("error", error);
+    }
+
+    async function generate() {
+      if (state.pending) return false;
+      state.pending = true;
+      el.generate.disabled = true;
+      el.download.disabled = true;
+      try {
+        const settings = readSettings();
+        setStatus("正在生成“" + settings.characters.join("") + "”的单线宋体轨迹…");
+        const glyphs = await Promise.all(settings.characters.map(glyphStrokes));
+        const points = makeTrajectory(settings, glyphs);
+        state.points = points;
+        state.bounds = calculateBounds(points);
+        draw();
+        setStatus(
+          "已生成 " + points.length + " 个有序点\n" +
+          "文字：" + settings.characters.join("") + "\n" +
+          "y_C：" + state.bounds.minY.toFixed(3) + " ~ " + state.bounds.maxY.toFixed(3) + " m\n" +
+          "z_C：" + state.bounds.minZ.toFixed(3) + " ~ " + state.bounds.maxZ.toFixed(3) + " m"
+        );
+        return true;
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), true);
+        return false;
+      } finally {
+        state.pending = false;
+        el.generate.disabled = false;
+        el.download.disabled = !state.points.length;
+      }
+    }
+
+    async function download() {
+      if (!state.points.length && !(await generate())) return;
+
+      const content = JSON.stringify(state.points, null, 2) + "\n";
+      const url = URL.createObjectURL(new Blob([content], { type: "application/json;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "points_c.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    [el.penUpHoldCount, el.penDownHoldCount, el.publishFrequency].forEach((input) => {
+      input.addEventListener("input", updateWaitTimes);
+    });
+    updateWaitTimes();
+
+    el.generate.addEventListener("click", generate);
+    el.download.addEventListener("click", download);
+    el.zoom.addEventListener("change", draw);
+    el.showPoints.addEventListener("change", draw);
+    el.showMoves.addEventListener("change", draw);
+    
+    document.addEventListener("hanzi-mode-change", (event) => {
+      if (event.detail === "text") draw();
+    });
+    window.addEventListener("resize", draw);
+
+    generate();
+  })();
+  </script>
+  <script>
+  // 自由手写：保留 Write.html 的指针、采样、撤销和导出逻辑。
+  (() => {
+
+    "use strict";
+
+    const BOARD_Y = 1.5;
+    const BOARD_Z = 0.9;
+    const GRID_STEP = 0.1;
+
+    const el = {
+      canvas: document.getElementById("write-board"),
+      pointStep: document.getElementById("write-pointStep"),
+      penUpHoldCount: document.getElementById("penUpHoldCount"),
+      penDownHoldCount: document.getElementById("penDownHoldCount"),
+      publishFrequency: document.getElementById("publishFrequency"),
+      waitTimes: document.getElementById("waitTimes"),
+      showPoints: document.getElementById("write-showPoints"),
+      showMoves: document.getElementById("write-showMoves"),
+      showGrid: document.getElementById("write-showGrid"),
+      undo: document.getElementById("write-undo"),
+      clear: document.getElementById("write-clear"),
+      finish: document.getElementById("write-finish"),
+      download: document.getElementById("write-download"),
+      status: document.getElementById("write-status"),
+      coordinate: document.getElementById("write-coordinate")
+    };
+
+    const state = {
+      points: [],
+      strokes: 0,
+      undoStack: [],
+      drawing: false,
+      activePointerId: null,
+      lastInput: null,
+      cursor: null,
+      pendingMove: []
+    };
+
+    function clamp(value, minimum, maximum) {
+      return Math.max(minimum, Math.min(maximum, value));
+    }
+
+    function readStep() {
+      const step = Number(el.pointStep.value);
+      if (!Number.isFinite(step) || step < 0.0002 || step > 0.05) {
+        throw new Error("采样间距必须在 0.0002～0.05 m 之间。");
+      }
+      return step;
+    }
+
+    function readHoldSettings() {
+      const readCount = (input, name) => {
+        const count = Number(input.value);
+        if (!input.value.trim() || !Number.isSafeInteger(count) || count < 0) {
+          throw new Error(name + "必须是大于等于 0 的整数");
+        }
+        return count;
+      };
+      const upHoldCount = readCount(el.penUpHoldCount, "前面新增点数");
+      const downHoldCount = readCount(el.penDownHoldCount, "后面新增点数");
+      const publishFrequency = Number(el.publishFrequency.value);
+      if (!Number.isFinite(publishFrequency) || publishFrequency <= 0) {
+        throw new Error("发布频率必须大于 0 Hz");
+      }
+      return { upHoldCount, downHoldCount, publishFrequency };
+    }
+
+    function updateWaitTimes() {
+      try {
+        const hold = readHoldSettings();
+        const before = hold.upHoldCount / hold.publishFrequency;
+        const after = hold.downHoldCount / hold.publishFrequency;
+        el.waitTimes.textContent =
+          "前面抬笔等待：" + before.toFixed(3) + " s\n" +
+          "后面落笔等待：" + after.toFixed(3) + " s\n" +
+          "每笔新增等待合计：" + (before + after).toFixed(3) + " s";
+        el.waitTimes.classList.toggle("error", false);
+      } catch (error) {
+        el.waitTimes.textContent = error.message;
+        el.waitTimes.classList.toggle("error", true);
+      }
+    }
+
+    function samePosition(a, b, epsilon = 1e-9) {
+      return Boolean(a && b) && Math.abs(a.y - b.y) <= epsilon && Math.abs(a.z - b.z) <= epsilon;
+    }
+
+    function addPoint(target, point, penDown, label) {
+      target.push({
+        x: 0,
+        y: Number(point.y.toFixed(6)),
+        z: Number(point.z.toFixed(6)),
+        pen_down: penDown,
+        label
+      });
+    }
+
+    function sampleSegment(target, start, end, step, penDown, label) {
+      const distance = Math.hypot(end.y - start.y, end.z - start.z);
+      if (distance <= 1e-12) return;
+      const count = Math.max(1, Math.ceil(distance / step));
+      for (let index = 1; index <= count; index += 1) {
+        const ratio = index / count;
+        addPoint(target, {
+          y: start.y + (end.y - start.y) * ratio,
+          z: start.z + (end.z - start.z) * ratio
+        }, penDown, label);
+      }
+    }
+
+    function canvasMetrics() {
+      const rect = el.canvas.getBoundingClientRect();
+      const width = Math.max(1, rect.width);
+      const height = Math.max(1, rect.height);
+      const marginX = Math.min(58, width * 0.08);
+      const marginY = Math.min(48, height * 0.10);
+      const scale = Math.max(1, Math.min(
+        (width - marginX * 2) / BOARD_Y,
+        (height - marginY * 2) / BOARD_Z
+      ));
+      const boardWidth = BOARD_Y * scale;
+      const boardHeight = BOARD_Z * scale;
+      return {
+        rect,
+        width,
+        height,
+        scale,
+        left: (width - boardWidth) / 2,
+        top: (height - boardHeight) / 2,
+        boardWidth,
+        boardHeight
+      };
+    }
+
+    function eventToBoard(event, allowClamp = false) {
+      if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) return null;
+      const metrics = canvasMetrics();
+      let pixelX = event.clientX - metrics.rect.left;
+      let pixelY = event.clientY - metrics.rect.top;
+      const inside = pixelX >= metrics.left && pixelX <= metrics.left + metrics.boardWidth &&
+        pixelY >= metrics.top && pixelY <= metrics.top + metrics.boardHeight;
+      if (!inside && !allowClamp) return null;
+      pixelX = clamp(pixelX, metrics.left, metrics.left + metrics.boardWidth);
+      pixelY = clamp(pixelY, metrics.top, metrics.top + metrics.boardHeight);
+      return {
+        y: clamp(BOARD_Y - (pixelX - metrics.left) / metrics.scale, 0, BOARD_Y),
+        z: clamp(BOARD_Z - (pixelY - metrics.top) / metrics.scale, 0, BOARD_Z)
+      };
+    }
+
+    function boardToPixel(point, metrics) {
+      return {
+        x: metrics.left + (BOARD_Y - point.y) * metrics.scale,
+        y: metrics.top + (BOARD_Z - point.z) * metrics.scale
+      };
+    }
+
+    function drawGrid(context, metrics) {
+      if (!el.showGrid.checked) return;
+      context.save();
+      for (let y = 0; y <= BOARD_Y + 1e-9; y += GRID_STEP) {
+        const pixel = boardToPixel({ y, z: 0 }, metrics);
+        const major = Math.abs((y * 10) % 5) < 1e-6;
+        context.beginPath();
+        context.moveTo(pixel.x, metrics.top);
+        context.lineTo(pixel.x, metrics.top + metrics.boardHeight);
+        context.strokeStyle = major ? "rgba(255,255,255,.16)" : "rgba(255,255,255,.07)";
+        context.lineWidth = major ? 1 : .7;
+        context.stroke();
+      }
+      for (let z = 0; z <= BOARD_Z + 1e-9; z += GRID_STEP) {
+        const pixel = boardToPixel({ y: 0, z }, metrics);
+        const major = Math.abs((z * 10) % 5) < 1e-6;
+        context.beginPath();
+        context.moveTo(metrics.left, pixel.y);
+        context.lineTo(metrics.left + metrics.boardWidth, pixel.y);
+        context.strokeStyle = major ? "rgba(255,255,255,.16)" : "rgba(255,255,255,.07)";
+        context.lineWidth = major ? 1 : .7;
+        context.stroke();
+      }
+      context.restore();
+    }
+
+    function drawPolyline(context, points, metrics, penDown, provisional = false) {
+      if (points.length < 2) return;
+      if (!penDown && !el.showMoves.checked) return;
+      context.save();
+      context.beginPath();
+      const first = boardToPixel(points[0], metrics);
+      context.moveTo(first.x, first.y);
+      for (let index = 1; index < points.length; index += 1) {
+        const pixel = boardToPixel(points[index], metrics);
+        context.lineTo(pixel.x, pixel.y);
+      }
+      context.strokeStyle = penDown ? "#fff5df" : (provisional ? "rgba(242,164,95,.55)" : "#f2a45f");
+      context.lineWidth = penDown ? 2.6 : 1.4;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.setLineDash(penDown ? [] : [6, 5]);
+      context.stroke();
+      context.restore();
+    }
+
+    function drawTrajectory(context, metrics) {
+      if (!state.points.length) return;
+      let segment = [state.points[0]];
+      let currentState = state.points[0].pen_down;
+      for (let index = 1; index < state.points.length; index += 1) {
+        const point = state.points[index];
+        if (point.pen_down !== currentState) {
+          drawPolyline(context, segment, metrics, currentState);
+          segment = [state.points[index - 1], point];
+          currentState = point.pen_down;
+        } else {
+          segment.push(point);
+        }
+      }
+      drawPolyline(context, segment, metrics, currentState);
+
+      if (el.showMoves.checked && !state.drawing && state.pendingMove.length) {
+        const start = state.points[state.points.length - 1];
+        drawPolyline(context, [start, ...state.pendingMove], metrics, false, true);
+      }
+
+      if (el.showPoints.checked) {
+        context.save();
+        for (const point of state.points) {
+          const pixel = boardToPixel(point, metrics);
+          context.beginPath();
+          context.arc(pixel.x, pixel.y, point.pen_down ? 1.45 : 1.2, 0, Math.PI * 2);
+          context.fillStyle = point.pen_down ? "#e85e4a" : "#54b8e8";
+          context.fill();
+        }
+        context.restore();
+      }
+    }
+
+    function drawAxes(context, metrics) {
+      context.save();
+      context.fillStyle = "rgba(255,255,255,.83)";
+      context.font = "12px Segoe UI, sans-serif";
+      context.fillText("1.50 m", metrics.left + 8, metrics.top + 18);
+      context.fillText("0.90 m", metrics.left + 8, metrics.top + 35);
+      const origin = boardToPixel({ y: 0, z: 0 }, metrics);
+      context.fillText("O_C", origin.x - 30, origin.y - 10);
+      context.fillText("+y_C ←", metrics.left + metrics.boardWidth / 2 - 22, metrics.top + metrics.boardHeight + 27);
+      context.save();
+      context.translate(metrics.left - 29, metrics.top + metrics.boardHeight / 2 + 22);
+      context.rotate(-Math.PI / 2);
+      context.fillText("+z_C →", 0, 0);
+      context.restore();
+      context.restore();
+    }
+
+    function draw() {
+      if (document.getElementById("mode-write").hidden) return;
+      const metrics = canvasMetrics();
+      const ratio = window.devicePixelRatio || 1;
+      const pixelWidth = Math.max(1, Math.round(metrics.width * ratio));
+      const pixelHeight = Math.max(1, Math.round(metrics.height * ratio));
+      if (el.canvas.width !== pixelWidth || el.canvas.height !== pixelHeight) {
+        el.canvas.width = pixelWidth;
+        el.canvas.height = pixelHeight;
+      }
+      const context = el.canvas.getContext("2d");
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.clearRect(0, 0, metrics.width, metrics.height);
+      context.fillStyle = "#cfc8bb";
+      context.fillRect(0, 0, metrics.width, metrics.height);
+      context.fillStyle = "#123f32";
+      context.fillRect(metrics.left, metrics.top, metrics.boardWidth, metrics.boardHeight);
+      context.strokeStyle = "#0a2d24";
+      context.lineWidth = 3;
+      context.strokeRect(metrics.left, metrics.top, metrics.boardWidth, metrics.boardHeight);
+      drawGrid(context, metrics);
+      drawTrajectory(context, metrics);
+      drawAxes(context, metrics);
+
+      if (state.cursor) {
+        const cursor = boardToPixel(state.cursor, metrics);
+        context.beginPath();
+        context.arc(cursor.x, cursor.y, state.drawing ? 5 : 3.5, 0, Math.PI * 2);
+        context.strokeStyle = state.drawing ? "#ffd36b" : "rgba(255,255,255,.75)";
+        context.lineWidth = 1.5;
+        context.stroke();
+      }
+    }
+
+    function setStatus(message, error = false) {
+      el.status.textContent = message;
+      el.status.classList.toggle("error", error);
+    }
+
+    function updateStatus(extra = "") {
+      const down = state.points.filter((point) => point.pen_down).length;
+      const up = state.points.length - down;
+      const tail = extra ? "\n" + extra : "";
+      setStatus(
+        "笔画数: " + state.strokes +
+        "\n全部采样点: " + state.points.length +
+        "\n落笔点 true: " + down +
+        "\n抬笔点 false: " + up + tail
+      );
+      el.undo.disabled = state.drawing || !state.undoStack.length;
+      el.clear.disabled = state.drawing || !state.points.length;
+      el.finish.disabled = state.drawing || !state.points.length;
+      el.download.disabled = state.drawing || !state.points.length;
+    }
+
+    function updateCoordinate(point) {
+      if (!point) {
+        el.coordinate.textContent = "指针未进入黑板";
+        return;
+      }
+      el.coordinate.textContent =
+        "x_C=0.0000, y_C=" + point.y.toFixed(4) + ", z_C=" + point.z.toFixed(4) + " m";
+    }
+
+    function commitPendingMove(target, step, label) {
+      if (!state.points.length) {
+        addPoint(state.points, target, false, label + "_start");
+        return;
+      }
+      let previous = state.points[state.points.length - 1];
+      for (const waypoint of [...state.pendingMove, target]) {
+        sampleSegment(state.points, previous, waypoint, step, false, label + "_move");
+        previous = waypoint;
+      }
+      if (!samePosition(state.points[state.points.length - 1], target)) {
+        addPoint(state.points, target, false, label + "_start");
+      } else {
+        state.points[state.points.length - 1].label = label + "_start";
+      }
+    }
+
+    function beginStroke(event) {
+      if (state.drawing || (event.pointerType === "mouse" && event.button !== 0)) return;
+      const point = eventToBoard(event, false);
+      if (!point) return;
+      let step;
+      let holdSettings;
+      try {
+        step = readStep();
+        holdSettings = readHoldSettings();
+      } catch (error) {
+        setStatus(error.message, true);
+        return;
+      }
+
+      event.preventDefault();
+      state.undoStack.push({
+        points: state.points.map((point) => ({ ...point })),
+        strokes: state.strokes
+      });
+      const strokeNumber = state.strokes + 1;
+      const label = "stroke" + strokeNumber;
+      commitPendingMove(point, step, label);
+      // 在每笔起点按设置追加同坐标的抬笔、落笔等待点。
+      for (let hold = 0; hold < holdSettings.upHoldCount; hold += 1) {
+        state.points.push({ ...state.points[state.points.length - 1] });
+      }
+      addPoint(state.points, point, true, label + "_down");
+      for (let hold = 0; hold < holdSettings.downHoldCount; hold += 1) {
+        state.points.push({ ...state.points[state.points.length - 1] });
+      }
+      state.pendingMove = [];
+      state.strokes = strokeNumber;
+      state.drawing = true;
+      state.activePointerId = event.pointerId;
+      state.lastInput = point;
+      state.cursor = point;
+      el.canvas.setPointerCapture(event.pointerId);
+      updateCoordinate(point);
+      updateStatus("正在书写第 " + strokeNumber + " 笔…");
+      draw();
+    }
+
+    function appendWritingPoint(point, force = false) {
+      if (!state.lastInput) return;
+      const step = readStep();
+      const distance = Math.hypot(point.y - state.lastInput.y, point.z - state.lastInput.z);
+      if (!force && distance < Math.max(0.00015, step * 0.35)) return;
+      sampleSegment(state.points, state.lastInput, point, step, true, "stroke" + state.strokes);
+      state.lastInput = point;
+    }
+
+    function movePointer(event) {
+      const point = eventToBoard(event, state.drawing && event.pointerId === state.activePointerId);
+      if (!point) {
+        if (!state.drawing) {
+          state.cursor = null;
+          updateCoordinate(null);
+          draw();
+        }
+        return;
+      }
+      state.cursor = point;
+      updateCoordinate(point);
+
+      if (state.drawing && event.pointerId === state.activePointerId) {
+        event.preventDefault();
+        try {
+          appendWritingPoint(point, false);
+          updateStatus("正在书写第 " + state.strokes + " 笔…");
+        } catch (error) {
+          setStatus(error.message, true);
+        }
+      } else if (!state.drawing && state.points.length) {
+        const previous = state.pendingMove.length
+          ? state.pendingMove[state.pendingMove.length - 1]
+          : state.points[state.points.length - 1];
+        const threshold = Math.max(0.0003, Number(el.pointStep.value) || 0.002);
+        if (Math.hypot(point.y - previous.y, point.z - previous.z) >= threshold) {
+          state.pendingMove.push(point);
+        }
+      }
+      draw();
+    }
+
+    function endStroke(event) {
+      if (!state.drawing || event.pointerId !== state.activePointerId) return;
+      event.preventDefault();
+      const point = eventToBoard(event, true) || state.lastInput;
+      try {
+        appendWritingPoint(point, true);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+      const end = state.lastInput || point;
+      addPoint(state.points, end, false, "stroke" + state.strokes + "_up");
+      state.drawing = false;
+      state.activePointerId = null;
+      state.lastInput = null;
+      state.pendingMove = [];
+      if (el.canvas.hasPointerCapture(event.pointerId)) el.canvas.releasePointerCapture(event.pointerId);
+      updateStatus("第 " + state.strokes + " 笔已抬笔。可继续写下一笔。 ");
+      draw();
+    }
+
+    function undoStroke() {
+      if (state.drawing || !state.undoStack.length) return;
+      const snapshot = state.undoStack.pop();
+      state.points = snapshot.points;
+      state.strokes = snapshot.strokes;
+      state.pendingMove = [];
+      updateStatus(state.strokes ? "已撤销上一笔。" : "已撤销，当前没有轨迹。");
+      draw();
+    }
+
+    function clearAll() {
+      if (state.drawing || !state.points.length) return;
+      if (!window.confirm("确定清空当前全部手写轨迹吗？")) return;
+      state.points = [];
+      state.strokes = 0;
+      state.undoStack = [];
+      state.pendingMove = [];
+      state.cursor = null;
+      updateCoordinate(null);
+      updateStatus("已清空全部轨迹。");
+      draw();
+    }
+
+    function validateTrajectory() {
+      if (state.drawing) throw new Error("请先松开指针，结束当前笔画。");
+      if (state.points.length < 2 || !state.strokes) throw new Error("请先在黑板上写字。");
+      const beforeLast = state.points[state.points.length - 2];
+      const last = state.points[state.points.length - 1];
+      if (!beforeLast.pen_down || last.pen_down || !samePosition(beforeLast, last)) {
+        throw new Error("轨迹末端不是同坐标 true → false，请撤销最后一笔后重写。");
+      }
+      for (const point of state.points) {
+        if (point.x !== 0 || point.y < 0 || point.y > BOARD_Y || point.z < 0 || point.z > BOARD_Z) {
+          throw new Error("存在超出黑板范围的采样点。");
+        }
+      }
+      return true;
+    }
+
+    function finishTrajectory() {
+      try {
+        validateTrajectory();
+        updateStatus("轨迹校验通过：坐标范围、笔状态和最终抬笔均正确。");
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    function downloadJson() {
+      try {
+        validateTrajectory();
+        const content = JSON.stringify(state.points, null, 2) + "\n";
+        const url = URL.createObjectURL(new Blob([content], { type: "application/json;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "points_c_write.json";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        updateStatus("已下载 points_c_write.json。");
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    [el.penUpHoldCount, el.penDownHoldCount, el.publishFrequency].forEach((input) => {
+      input.addEventListener("input", updateWaitTimes);
+    });
+    updateWaitTimes();
+
+    el.canvas.addEventListener("pointerdown", beginStroke);
+    el.canvas.addEventListener("pointermove", movePointer);
+    el.canvas.addEventListener("pointerup", endStroke);
+    el.canvas.addEventListener("pointercancel", endStroke);
+    el.canvas.addEventListener("pointerleave", (event) => {
+      if (!state.drawing) {
+        state.cursor = null;
+        updateCoordinate(null);
+        draw();
+      }
+    });
+    el.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+    el.undo.addEventListener("click", undoStroke);
+    el.clear.addEventListener("click", clearAll);
+    el.finish.addEventListener("click", finishTrajectory);
+    el.download.addEventListener("click", downloadJson);
+    el.showPoints.addEventListener("change", draw);
+    el.showMoves.addEventListener("change", draw);
+    el.showGrid.addEventListener("change", draw);
+    
+    document.addEventListener("hanzi-mode-change", (event) => {
+      if (event.detail === "write") draw();
+    });
+    window.addEventListener("resize", draw);
+    window.addEventListener("keydown", (event) => {
+      if (document.getElementById("mode-write").hidden || /^(INPUT|TEXTAREA)$/.test(event.target?.tagName || "")) return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        undoStroke();
+      }
+    });
+
+    updateStatus();
+    draw();
+  
+    document.addEventListener("hanzi-before-mode-change", (event) => {
+      if (state.drawing) {
+        event.preventDefault();
+        setStatus("请先松开指针，结束当前笔画后再切换模式。", true);
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
