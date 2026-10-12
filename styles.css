@@ -517,6 +517,27 @@ h1 .name-divider {
   border-radius: 0.2rem;
 }
 
+.timeline-logo-link--airia,
+.timeline-logo-link--maicro {
+  width: 10rem;
+  padding: 0.5rem;
+  border-radius: 0.2rem;
+}
+
+.timeline-logo-link--airia {
+  background: #1e2b58;
+}
+
+.timeline-logo-link--maicro {
+  background: #ffffff;
+}
+
+.timeline-logo--airia,
+.timeline-logo--maicro {
+  width: 100%;
+  height: auto;
+}
+
 .timeline-content {
   min-width: 0;
 }

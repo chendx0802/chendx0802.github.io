@@ -302,14 +302,58 @@ window.SITE_CONTENT = {
 
   experience: [
     {
-      period: { zh: "2025.06 — 2025.09", en: "Jun. 2025 — Sep. 2025" },
-      organization: { zh: "公司或实验室名称", en: "Company or Lab Name" },
-      role: { zh: "研究实习生", en: "Research Intern" },
+      period: { zh: "2026.10 — 至今", en: "Oct. 2026 — Present" },
+      organization: { zh: "中国科学院自动化研究所", en: "Institute of Automation, Chinese Academy of Sciences" },
+      role: { zh: "联培博士生", en: "Jointly Trained Ph.D. Student" },
       details: {
-        zh: "用一句话概括你负责的工作或研究内容。",
-        en: "Summarize your work or research in one sentence.",
+        zh: "负责空中具身机器人研发",
+        en: "Research and development of aerial embodied robots",
       },
-      url: "#",
+      url: "https://ia.cas.cn/",
+      logos: [
+        {
+          src: "assets/logos/casia.jpg",
+          alt: { zh: "中国科学院自动化研究所标志", en: "Institute of Automation, Chinese Academy of Sciences logo" },
+          url: "https://ia.cas.cn/",
+          variant: "casia",
+        },
+      ],
+    },
+    {
+      period: { zh: "2026.07 — 2026.09", en: "Jul. 2026 — Sep. 2026" },
+      organization: { zh: "中科南京人工智能创新研究院", en: "Nanjing Artificial Intelligence Innovation Research Institute" },
+      role: { zh: "联培博士生", en: "Jointly Trained Ph.D. Student" },
+      details: {
+        zh: "负责空中具身机器人研发",
+        en: "Research and development of aerial embodied robots",
+      },
+      url: "https://www.airia.cn/",
+      logos: [
+        {
+          src: "assets/logos/airia.png",
+          alt: { zh: "中科南京人工智能创新研究院标志", en: "Nanjing Artificial Intelligence Innovation Research Institute logo" },
+          url: "https://www.airia.cn/",
+          variant: "airia",
+        },
+      ],
+    },
+    {
+      period: { zh: "2025.12 — 2026.06", en: "Dec. 2025 — Jun. 2026" },
+      organization: { zh: "中科方寸知微", en: "Maicro (Nanjing) Technology Co., Ltd." },
+      role: { zh: "算法实习生", en: "Algorithm Intern" },
+      details: {
+        zh: "负责无人机控制算法研发",
+        en: "Research and development of drone control algorithms",
+      },
+      url: "http://www.maicro.com/",
+      logos: [
+        {
+          src: "assets/logos/maicro.png",
+          alt: { zh: "中科方寸知微标志", en: "Maicro logo" },
+          url: "http://www.maicro.com/",
+          variant: "maicro",
+        },
+      ],
     },
   ],
 
