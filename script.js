@@ -2,7 +2,7 @@ const content = window.SITE_CONTENT;
 
 const state = {
   lang: "en",
-  theme: "dark",
+  theme: "light",
 };
 
 const $ = (selector) => document.querySelector(selector);
