@@ -265,6 +265,10 @@ h1 .name-divider {
 .portrait-wrap {
   position: relative;
   margin: 0;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 0.15rem;
 }
 
 @media (min-width: 821px) {
@@ -283,9 +287,10 @@ h1 .name-divider {
   width: 100%;
   height: auto;
   aspect-ratio: 4 / 5;
-  border: 1px solid var(--line);
-  border-radius: 0.15rem;
   object-fit: cover;
+  object-position: 64% center;
+  transform: scale(1.55);
+  transform-origin: 64% 75%;
   background: var(--paper-strong);
   box-shadow: none;
   filter: none;

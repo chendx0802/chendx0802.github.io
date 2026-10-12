@@ -105,9 +105,9 @@ window.SITE_CONTENT = {
         ],
       },
     ],
-    photo: "assets/profile-placeholder.svg",
+    photo: "assets/profile.jpg",
     photoAlt: { zh: "陈丁熊的个人照片", en: "Portrait of Dingxiong Chen" },
-    photoCaption: { zh: "照片说明（可删除）", en: "Photo caption (optional)" },
+    photoCaption: { zh: "陈丁熊", en: "Dingxiong Chen" },
     links: [
       {
         label: { zh: "邮箱", en: "Email" },
