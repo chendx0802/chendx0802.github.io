@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="中英文文字、黑体单线与自由手写轨迹生成器，支持黑板坐标预览、可调等待点数、等待时间估算和 JSON 导出。">
+  <meta name="description" content="中英文文字、普惠体笔顺与自由手写轨迹生成器，支持黑板坐标预览、可调等待点数、等待时间估算和 JSON 导出。">
   <meta name="theme-color" content="#176443">
-  <title>汉字轨迹工作台 · 文字、黑体单线与自由手写</title>
+  <title>汉字轨迹工作台 · 文字、普惠体笔顺与自由手写</title>
   <style>
     :root {
       color-scheme: light;
@@ -119,7 +119,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 5h16M12 5v15M8 20h8M7 9h10"/></svg>文字生成
         </button>
         <button id="tab-heiti" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="mode-heiti" data-mode="heiti" tabindex="-1">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M4 6h16M7 11h10M12 3v18M5 20h14"/></svg>黑体单线
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M4 6h16M7 11h10M12 3v18M5 20h14"/></svg>普惠体笔顺
         </button>
         <button id="tab-write" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="mode-write" data-mode="write" tabindex="-1">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m15 4 5 5M4 20l5-1L20 8a2 2 0 0 0-4-4L5 15l-1 5Z"/></svg>自由手写
@@ -218,27 +218,22 @@
       <div class="layout">
       <aside>
         <fieldset class="heiti-font-panel">
-          <legend>黑体字库</legend>
-          <p class="hint">默认 Noto Sans CJK SC Regular 2.004（思源黑体同源设计）。首次加载约 16 MB，成功后尝试缓存。</p>
-          <button id="heiti-loadFont" type="button">加载黑体字库</button>
-          <div class="field heiti-import">
-            <label for="heiti-fontFile">或导入本地黑体字体（.otf / .ttf）</label>
-            <input id="heiti-fontFile" type="file" accept=".otf,.ttf">
-          </div>
-          <p id="heiti-fontStatus" class="hint" aria-live="polite">字库尚未加载</p>
+          <legend>Alibaba PuHuiTi 3.0</legend>
+          <p class="hint">固定使用阿里巴巴普惠体 Regular（约 8.5 MB），加载后尝试缓存。</p>
+          <button id="heiti-loadFont" type="button">加载普惠体字库</button>
+          <p id="heiti-fontStatus" class="hint" aria-live="polite">普惠体尚未加载</p>
+          <p class="hint">字形用于参照；轨迹使用带顺序与方向的逐笔中线，避免交叉处错拼、倒写。中线不等同于普惠体印刷轮廓。</p>
         </fieldset>
-        <div class="field">
-          <label for="heiti-detail">中线精度</label>
-          <select id="heiti-detail">
-            <option value="256">快速</option>
-            <option value="384" selected>标准（推荐）</option>
-            <option value="512">精细</option>
-          </select>
+        <div class="field"><label for="heiti-detail">普惠体参考图精度（不影响笔顺）</label>
+          <select id="heiti-detail"><option value="256">快速</option><option value="384" selected>标准</option><option value="512">精细</option></select>
         </div>
-        <label class="check"><input id="heiti-showReference" type="checkbox" checked>显示原黑体字形参考（仅预览）</label>
+        <label class="check"><input id="heiti-showReference" type="checkbox" checked>显示普惠体字形参考</label>
+        <label class="check"><input id="heiti-showOrder" type="checkbox" checked>显示笔画编号与起笔方向</label>
+        <button id="heiti-playOrder" type="button" disabled>逐笔播放</button>
+        <p id="heiti-orderStatus" class="hint" aria-live="polite">生成后可逐笔检查；播放不计入等待点。</p>
 
         <div class="field">
-          <label for="heiti-text">黑体文字（常用汉字、中英文及数字，最多 10 个）</label>
+          <label for="heiti-text">书写文字（中文、中英文字母及数字，最多 10 个）</label>
           <input id="heiti-text" type="text" value="方寸" maxlength="10" autocomplete="off">
         </div>
 
@@ -280,24 +275,22 @@
         </label>
 
         <div class="buttons">
-          <button id="heiti-generate" class="primary" type="button">生成黑体单线</button>
-          <button id="heiti-download" type="button" disabled>下载黑体 JSON</button>
+          <button id="heiti-generate" class="primary" type="button">按笔顺生成</button>
+          <button id="heiti-download" type="button" disabled>下载轨迹 JSON</button>
         </div>
 
         <div id="heiti-status" class="status" aria-live="polite"></div>
-        <details class="notes"><summary>黑体中线与书写说明</summary><div class="note">
-      本模块从真实黑体字形提取单线骨架，导出中线轨迹，不描封闭外轮廓。
-      字库不含书写笔顺；中线在交叉处按方向连续性连接，路径采用就近排序，不保证传统汉字笔顺。
-      细小笔画和复杂交叉可能有提取误差，请在实际书写前预览。每条路径仍按共用设置插入抬笔、落笔等待点。
-      字库采用 <a href="https://github.com/notofonts/noto-cjk" target="_blank" rel="noopener noreferrer">Noto Sans CJK</a>，
-      <a href="https://raw.githubusercontent.com/notofonts/noto-cjk/Sans2.004/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf" target="_blank" rel="noopener noreferrer">下载字体</a>。
-      离线时可使用已缓存的字库，或导入本地字体。导出文件为 points_c_heiti.json。
-    </div></details>
+        <details class="notes"><summary>笔顺来源与正确性说明</summary><div class="note">
+中文逐笔数据来自 Hanzi Writer Data 2.0.1 / Make Me a Hanzi。严格保留数据中的笔数、顺序及每笔起止方向；不再使用骨架最近邻排序、反向或拼接。缺少有效逐笔数据时停止生成，不猜测补齐。<br>
+常用字的逐笔数据已内置，其余字首次需要联网，并缓存在本地。英文字母使用固定单线大写字形，数字使用内置单线字形。<br>
+Alibaba PuHuiTi 用于字形显示参照；字体文件本身不含汉字笔顺，中线形状与普惠体印刷字形可能有差别。<br>
+<a href="https://www.alibabafonts.com/" target="_blank" rel="noopener noreferrer">普惠体官网</a> · <a href="https://github.com/chanind/hanzi-writer-data" target="_blank" rel="noopener noreferrer">逐笔数据来源</a>
+</div></details>
       </aside>
 
       <section class="preview">
         <div class="preview-head">
-          <strong>黑体单线预览</strong>
+          <strong>普惠体参考 · 标准笔顺轨迹</strong>
           <div class="legend">
             <span class="key"><span class="swatch"></span>固定线宽笔迹</span>
             <span class="key"><span class="swatch move"></span>抬笔移动</span>
@@ -356,99 +349,71 @@
     </div>
     </section>
     <p class="page-footer">坐标单位：米 · x_C 固定为 0 · 每笔先抬笔等待、同点落笔等待，再开始书写</p>
-    <details class="font-license"><summary>Noto 黑体字库来源与 OFL 许可证</summary><p>默认字体：Noto Sans CJK SC Regular 2.004，版权信息保留于原版字体文件。<a href="https://github.com/notofonts/noto-cjk" target="_blank" rel="noopener noreferrer">官方项目</a></p><pre>This Font Software is licensed under the SIL Open Font License,
-Version 1.1.
+    <details class="font-license"><summary>普惠体字库与笔顺数据来源 / 授权</summary><pre>Alibaba PuHuiTi 3.0 55 Regular
+Copyright (c) 2020-2023 Alibaba (China) Co., Ltd. All rights reserved.
+Original unmodified font. Source: https://www.alibabafonts.com/
+Official legal statement: https://www.yuque.com/yiguang-wkqc2/hgpff0/nus9wiinq4aeiegy
+Official font: https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-55-Regular/AlibabaPuHuiTi-3-55-Regular.ttf
+CDN copy was SHA-256 verified identical to the official original: be33bc8d45ced30fa5c542f6f056565baf85003d4e079522110d76016f8a04e2
+Font rendering does not encode or determine handwriting stroke order.
+</pre><p>逐笔中线数据采用 Arphic Public License：</p><pre>ARPHIC PUBLIC LICENSE
 
-This license is copied below, and is also available with a FAQ at:
-http://scripts.sil.org/OFL
+Copyright (C) 1999 Arphic Technology Co., Ltd.
+11Fl. No.168, Yung Chi Rd., Taipei, 110 Taiwan
+All rights reserved except as specified below.
 
------------------------------------------------------------
-SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
------------------------------------------------------------
+Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is forbidden.
 
-PREAMBLE
-The goals of the Open Font License (OFL) are to stimulate worldwide
-development of collaborative font projects, to support the font
-creation efforts of academic and linguistic communities, and to
-provide a free and open framework in which fonts may be shared and
-improved in partnership with others.
+Preamble
 
-The OFL allows the licensed fonts to be used, studied, modified and
-redistributed freely as long as they are not sold by themselves. The
-fonts, including any derivative works, can be bundled, embedded,
-redistributed and/or sold with any software provided that any reserved
-names are not used by derivative works. The fonts and derivatives,
-however, cannot be released under any other type of license. The
-requirement for fonts to remain under this license does not apply to
-any document created using the fonts or their derivatives.
+   The licenses for most software are designed to take away your freedom to share and change it. By contrast, the ARPHIC PUBLIC LICENSE specifically permits and encourages you to use this software, provided that you give the recipients all the rights that we gave you and make sure they can get the modifications of this software.
 
-DEFINITIONS
-"Font Software" refers to the set of files released by the Copyright
-Holder(s) under this license and clearly marked as such. This may
-include source files, build scripts and documentation.
+Legal Terms
 
-"Reserved Font Name" refers to any names specified as such after the
-copyright statement(s).
+0. Definitions:
+   Throughout this License, "Font" means the TrueType fonts "AR PL Mingti2L Big5", "AR PL KaitiM Big5" (BIG-5 character set) and "AR PL SungtiL GB", "AR PL KaitiM GB" (GB character set) which are originally distributed by Arphic, and the derivatives of those fonts created through any modification including modifying glyph, reordering glyph, converting format, changing font name, or adding/deleting some characters in/from glyph table.
 
-"Original Version" refers to the collection of Font Software
-components as distributed by the Copyright Holder(s).
+   "PL" means "Public License".
 
-"Modified Version" refers to any derivative made by adding to,
-deleting, or substituting -- in part or in whole -- any of the
-components of the Original Version, by changing formats or by porting
-the Font Software to a new environment.
+   "Copyright Holder" means whoever is named in the copyright or copyrights for the Font.
 
-"Author" refers to any designer, engineer, programmer, technical
-writer or other person who contributed to the Font Software.
+   "You" means the licensee, or person copying, redistributing or modifying the Font.
 
-PERMISSION &amp; CONDITIONS
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of the Font Software, to use, study, copy, merge, embed,
-modify, redistribute, and sell modified and unmodified copies of the
-Font Software, subject to the following conditions:
+   "Freely Available" means that you have the freedom to copy or modify the Font as well as redistribute copies of the Font under the same conditions you received, not price. If you wish, you can charge for this service.
 
-1) Neither the Font Software nor any of its individual components, in
-Original or Modified Versions, may be sold by itself.
+1. Copying &amp; Distribution
+   You may copy and distribute verbatim copies of this Font in any medium, without restriction, provided that you retain this license file (ARPHICPL.TXT) unaltered in all copies.
 
-2) Original or Modified Versions of the Font Software may be bundled,
-redistributed and/or sold with any software, provided that each copy
-contains the above copyright notice and this license. These can be
-included either as stand-alone text files, human-readable headers or
-in the appropriate machine-readable metadata fields within text or
-binary files as long as those fields can be easily viewed by the user.
+2. Modification
+   You may otherwise modify your copy of this Font in any way, including modifying glyph, reordering glyph, converting format, changing font name, or adding/deleting some characters in/from glyph table, and copy and distribute such modifications under the terms of Section 1 above, provided that the following conditions are met:
 
-3) No Modified Version of the Font Software may use the Reserved Font
-Name(s) unless explicit written permission is granted by the
-corresponding Copyright Holder. This restriction only applies to the
-primary font name as presented to the users.
+   a) You must insert a prominent notice in each modified file stating how and when you changed that file.
 
-4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
-Software shall not be used to promote, endorse or advertise any
-Modified Version, except to acknowledge the contribution(s) of the
-Copyright Holder(s) and the Author(s) or with their explicit written
-permission.
+   b) You must make such modifications Freely Available as a whole to all third parties under the terms of this License, such as by offering access to copy the modifications from a designated place, or distributing the modifications on a medium customarily used for software interchange.
 
-5) The Font Software, modified or unmodified, in part or in whole,
-must be distributed entirely under this license, and must not be
-distributed under any other license. The requirement for fonts to
-remain under this license does not apply to any document created using
-the Font Software.
+   c) If the modified fonts normally reads commands interactively when run, you must cause it, when started running for such interactive use in the most ordinary way, to print or display an announcement including an appropriate copyright notice and a notice that there is no warranty (or else, saying that you provide a warranty) and that users may redistribute the Font under these conditions, and telling the user how to view a copy of this License.
 
-TERMINATION
-This license becomes null and void if any of the above conditions are
-not met.
+   These requirements apply to the modified work as a whole. If identifiable sections of that work are not derived from the Font, and can be reasonably considered independent and separate works in themselves, then this License and its terms, do not apply to those sections when you distribute them as separate works. Therefore, mere aggregation of another work not based on the Font with the Font on a volume of a storage or distribution medium does not bring the other work under the scope of this License.
 
-DISCLAIMER
-THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
-OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
-COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
-DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
-OTHER DEALINGS IN THE FONT SOFTWARE.
-</pre></details>
+3. Condition Subsequent
+   You may not copy, modify, sublicense, or distribute the Font except as expressly provided under this License. Any attempt otherwise to copy, modify, sublicense or distribute the Font will automatically retroactively void your rights under this License. However, parties who have received copies or rights from you under this License will keep their licenses valid so long as such parties remain in full compliance.
+
+4. Acceptance
+   You are not required to accept this License, since you have not signed it. However, nothing else grants you permission to copy, modify, sublicense or distribute the Font. These actions are prohibited by law if you do not accept this License. Therefore, by copying, modifying, sublicensing or distributing the Font, you indicate your acceptance of this License and all its terms and conditions.
+
+5. Automatic Receipt
+   Each time you redistribute the Font, the recipient automatically receives a license from the original licensor to copy, distribute or modify the Font subject to these terms and conditions. You may not impose any further restrictions on the recipients' exercise of the rights granted herein. You are not responsible for enforcing compliance by third parties to this License. 
+
+6. Contradiction
+   If, as a consequence of a court judgment or allegation of patent infringement or for any other reason (not limited to patent issues), conditions are imposed on you (whether by court order, agreement or otherwise) that contradict the conditions of this License, they do not excuse you from the conditions of this License. If you cannot distribute so as to satisfy simultaneously your obligations under this License and any other pertinent obligations, then as a consequence you may not distribute the Font at all. For example, if a patent license would not permit royalty-free redistribution of the Font by all those who receive copies directly or indirectly through you, then the only way you could satisfy both it and this License would be to refrain entirely from distribution of the Font.
+
+   If any portion of this section is held invalid or unenforceable under any particular circumstance, the balance of the section is intended to apply and the section as a whole is intended to apply in other circumstances. 
+
+7. NO WARRANTY
+   BECAUSE THE FONT IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY FOR THE FONT, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS OR OTHER PARTIES PROVIDE THE FONT "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE FONT IS WITH YOU. SHOULD THE FONT PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+
+8. DAMAGES WAIVER
+   UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING, IN NO EVENT WILL ANY COPYRIGHTT HOLDERS, OR OTHER PARTIES WHO MAY COPY, MODIFY OR REDISTRIBUTE THE FONT AS PERMITTED ABOVE, BE LIABLE TO YOU FOR ANY DIRECT, INDIRECT, CONSEQUENTIAL, INCIDENTAL, SPECIAL OR EXEMPLARY DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE FONT (INCLUDING BUT NOT LIMITED TO PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA OR PROFITS; OR BUSINESS INTERRUPTION), EVEN IF SUCH HOLDERS OR OTHER PARTIES HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</pre></details>
   </main>
   <script>
   (() => {
@@ -456,7 +421,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     const tabs = [...document.querySelectorAll(".mode-tab")];
     const descriptions = {
       text: "输入中英文，按笔画顺序生成轨迹。",
-      heiti: "从真实黑体字库提取单线中线，生成适合执笔书写的轨迹。",
+      heiti: "按逐笔数据生成中线，保留顺序和方向；普惠体用于字形参照。",
       write: "按住指针拖动自由书写；松开后可继续下一笔。"
     };
     function selectMode(mode) {
@@ -1815,426 +1780,66 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 </script>
 <script>
-/*
- * Raster glyphs -> single-line paths. No DOM or third-party dependencies.
- * The resulting paths follow the visible glyph skeleton; a font does not encode
- * handwriting stroke order, so this does not recover traditional stroke order.
- * All coordinates are pixel coordinates in the input raster.
- */
+/* Directed stroke templates. Never reorder, reverse, join or split medians. */
 (function (root) {
   "use strict";
-
-  const DX = [0, 1, 1, 1, 0, -1, -1, -1];
-  const DY = [-1, -1, 0, 1, 1, 1, 0, -1];
-  const SQRT2 = Math.SQRT2;
-
-  function checkedMask(mask, width, height) {
-    if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) ||
-        width < 1 || height < 1 || !Number.isSafeInteger(width * height)) {
-      throw new TypeError("Raster width and height must be positive integers.");
+  function validate(character, data) {
+    if (!data || !Array.isArray(data.medians) || !data.medians.length || data.medians.length > 100) {
+      throw new Error("“" + character + "”缺少可验证的逐笔数据，已停止生成。");
     }
-    if (!mask || typeof mask.length !== "number" || mask.length !== width * height) {
-      throw new TypeError("Raster mask length must equal width × height.");
+    const expected = data.strokeCount ?? data.strokes?.length;
+    if (!Number.isInteger(expected) || expected !== data.medians.length) {
+      throw new Error("“" + character + "”的笔数与中线数据不一致，已停止生成。");
     }
-    const binary = new Uint8Array(mask.length);
-    for (let i = 0; i < mask.length; i++) binary[i] = mask[i] ? 1 : 0;
-    return binary;
+    for (const stroke of data.medians) {
+      if (!Array.isArray(stroke) || stroke.length < 2 || !stroke.every(point =>
+        Array.isArray(point) && point.length === 2 && point.every(Number.isFinite))) {
+        throw new Error("“" + character + "”的逐笔中线损坏，已停止生成。");
+      }
+    }
+    return { medians: data.medians, strokeCount: expected };
   }
-
-  function nonnegativeOption(value, fallback, name) {
-    if (value === undefined) return fallback;
-    if (!Number.isFinite(value) || value < 0) {
-      throw new TypeError(name + " must be a finite nonnegative number.");
+  function normalize(character, data) {
+    const checked = validate(character, data);
+    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+    for (const stroke of checked.medians) for (const [x,y] of stroke) {
+      minX=Math.min(minX,x); maxX=Math.max(maxX,x);
+      minY=Math.min(minY,y); maxY=Math.max(maxY,y);
     }
-    return value;
+    const x=(minX+maxX)/2, y=(minY+maxY)/2, span=Math.max(maxX-minX,maxY-minY);
+    if (!(span > 0)) throw new Error("“" + character + "”的逐笔数据没有有效长度。");
+    // Positive affine normalization preserves stroke order and start/end direction.
+    return checked.medians.map(stroke => stroke.map(point => [(point[0]-x)/span,(point[1]-y)/span]));
   }
-
-  function thin(mask, width, height) {
-    const input = checkedMask(mask, width, height);
-    // A zero border allows glyphs touching any input edge to be thinned too.
-    const stride = width + 2;
-    const data = new Uint8Array(stride * (height + 2));
-    for (let y = 0; y < height; y++) {
-      data.set(input.subarray(y * width, (y + 1) * width), (y + 1) * stride + 1);
-    }
-    const remove = [];
-    let changed;
-    do {
-      changed = false;
-      for (let pass = 0; pass < 2; pass++) {
-        remove.length = 0;
-        for (let y = 1; y <= height; y++) {
-          for (let x = 1; x <= width; x++) {
-            const i = y * stride + x;
-            if (!data[i]) continue;
-            const n = data[i - stride], ne = data[i - stride + 1];
-            const e = data[i + 1], se = data[i + stride + 1];
-            const s = data[i + stride], sw = data[i + stride - 1];
-            const w = data[i - 1], nw = data[i - stride - 1];
-            const count = n + ne + e + se + s + sw + w + nw;
-            // Zhang–Suen's two alternating deletion passes retain endpoints
-            // (one neighbour) and connected components while thinning strokes.
-            if (count < 2 || count > 6) continue;
-            const transitions = (!n && ne) + (!ne && e) + (!e && se) +
-              (!se && s) + (!s && sw) + (!sw && w) + (!w && nw) + (!nw && n);
-            if (transitions !== 1) continue;
-            if (pass === 0 ? (n * e * s || e * s * w) : (n * e * w || n * s * w)) continue;
-            remove.push(i);
-          }
-        }
-        if (remove.length) changed = true;
-        for (const i of remove) data[i] = 0;
-      }
-    } while (changed);
-    const result = new Uint8Array(input.length);
-    for (let y = 0; y < height; y++) {
-      result.set(data.subarray((y + 1) * stride + 1, (y + 1) * stride + width + 1), y * width);
-    }
-    // Parallel deletion can completely consume a very small filled component
-    // (notably a 2 × 2 dot). Keep its nearest-to-centroid pixel as a pen dot.
-    const seen = new Uint8Array(input.length);
-    for (let start = 0; start < input.length; start++) {
-      if (!input[start] || seen[start]) continue;
-      const component = [start];
-      seen[start] = 1;
-      let surviving = false, sumX = 0, sumY = 0;
-      for (let cursor = 0; cursor < component.length; cursor++) {
-        const i = component[cursor], x = i % width, y = Math.floor(i / width);
-        surviving = surviving || !!result[i];
-        sumX += x;
-        sumY += y;
-        for (let d = 0; d < 8; d++) {
-          const nx = x + DX[d], ny = y + DY[d], next = ny * width + nx;
-          if (nx < 0 || ny < 0 || nx >= width || ny >= height || !input[next] || seen[next]) continue;
-          seen[next] = 1;
-          component.push(next);
-        }
-      }
-      if (!surviving) {
-        const cx = sumX / component.length, cy = sumY / component.length;
-        let closest = start, distance = Infinity;
-        for (const i of component) {
-          const d = (i % width - cx) ** 2 + (Math.floor(i / width) - cy) ** 2;
-          if (d < distance) { distance = d; closest = i; }
-        }
-        result[closest] = 1;
-      }
-    }
-    return result;
-  }
-
-  function makeGraph(mask, width, height) {
-    const links = new Uint8Array(mask.length);
-    const degrees = new Uint8Array(mask.length);
-    for (let i = 0; i < mask.length; i++) {
-      if (!mask[i]) continue;
-      const x = i % width, y = Math.floor(i / width);
-      for (let d = 0; d < 8; d++) {
-        const nx = x + DX[d], ny = y + DY[d];
-        if (nx < 0 || ny < 0 || nx >= width || ny >= height || !mask[ny * width + nx]) continue;
-        // An L-shaped chain already joins these diagonal pixels via an
-        // orthogonal pixel. A diagonal edge would create a false triangle.
-        if ((d & 1) && (mask[y * width + nx] || mask[ny * width + x])) continue;
-        links[i] |= 1 << d;
-        degrees[i]++;
-      }
-    }
-    return { links: links, degrees: degrees };
-  }
-
-  function pruneTerminalSpurs(mask, width, height, maxLength) {
-    if (maxLength === 0) return;
-    const graph = makeGraph(mask, width, height);
-    const remove = new Set();
-    // One conservative pass: only a short endpoint-to-junction branch is
-    // removed. Short standalone strokes and every loop are retained.
-    for (let start = 0; start < mask.length; start++) {
-      if (graph.degrees[start] !== 1) continue;
-      let previous = -1, current = start, length = 0;
-      const branch = [start];
-      while (length <= maxLength) {
-        let next = -1, direction = -1;
-        for (let d = 0; d < 8; d++) {
-          if (!(graph.links[current] & (1 << d))) continue;
-          const candidate = current + DY[d] * width + DX[d];
-          if (candidate !== previous) { next = candidate; direction = d; break; }
-        }
-        if (next < 0) break;
-        length += (direction & 1) ? SQRT2 : 1;
-        if (length > maxLength) break;
-        if (graph.degrees[next] >= 3) {
-          for (const i of branch) remove.add(i);
-          break;
-        }
-        if (graph.degrees[next] !== 2) break;
-        branch.push(next);
-        previous = current;
-        current = next;
-      }
-    }
-    for (const i of remove) mask[i] = 0;
-  }
-
-  function traceChecked(mask, width, height) {
-    const graph = makeGraph(mask, width, height);
-    const visited = new Uint8Array(mask.length);
-    const paths = [];
-    const point = function (i) { return [i % width, Math.floor(i / width)]; };
-    function walk(start, firstDirection) {
-      const path = [point(start)];
-      let current = start, direction = firstDirection;
-      while (direction >= 0) {
-        const next = current + DY[direction] * width + DX[direction];
-        visited[current] |= 1 << direction;
-        visited[next] |= 1 << ((direction + 4) & 7);
-        path.push(point(next));
-        if (graph.degrees[next] !== 2 || next === start) break;
-        current = next;
-        direction = -1;
-        for (let d = 0; d < 8; d++) {
-          if ((graph.links[current] & (1 << d)) && !(visited[current] & (1 << d))) {
-            direction = d;
-            break;
-          }
-        }
-      }
-      paths.push(path);
-    }
-    // Begin with endpoints, then junctions. Stop at each junction so no
-    // skeleton edge is traversed twice just to reach a different branch.
-    for (const endpointPass of [true, false]) {
-      for (let i = 0; i < mask.length; i++) {
-        if (!mask[i]) continue;
-        const degree = graph.degrees[i];
-        if (endpointPass ? degree !== 1 : degree < 3) continue;
-        for (let d = 0; d < 8; d++) {
-          if ((graph.links[i] & (1 << d)) && !(visited[i] & (1 << d))) walk(i, d);
-        }
-      }
-    }
-    for (let i = 0; i < mask.length; i++) {
-      if (!mask[i]) continue;
-      if (graph.degrees[i] === 0) { paths.push([point(i)]); continue; }
-      // Remaining edges belong to closed cycles; retain their closing point.
-      for (let d = 0; d < 8; d++) {
-        if ((graph.links[i] & (1 << d)) && !(visited[i] & (1 << d))) walk(i, d);
-      }
-    }
-    return paths;
-  }
-
-  function trace(mask, width, height) {
-    return traceChecked(checkedMask(mask, width, height), width, height);
-  }
-
-  function segmentDistanceSquared(point, a, b) {
-    const dx = b[0] - a[0], dy = b[1] - a[1];
-    const denominator = dx * dx + dy * dy;
-    const t = denominator ? Math.max(0, Math.min(1,
-      ((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / denominator)) : 0;
-    const ex = point[0] - a[0] - t * dx, ey = point[1] - a[1] - t * dy;
-    return ex * ex + ey * ey;
-  }
-
-  function joinAtJunctions(paths) {
-    const vertices = new Map();
-    const paired = new Int32Array(paths.length * 2);
-    paired.fill(-1);
-    const closed = new Uint8Array(paths.length);
-    function outgoingTangent(path, side) {
-      const first = side ? path.length - 1 : 0;
-      const step = side ? -1 : 1;
-      let previous = path[first], point = previous, length = 0;
-      // Looking a few pixels into a branch avoids pairing according to the
-      // stair-step direction of its first raster edge alone.
-      for (let i = first + step; i >= 0 && i < path.length; i += step) {
-        point = path[i];
-        length += Math.hypot(point[0] - previous[0], point[1] - previous[1]);
-        if (length >= 5) break;
-        previous = point;
-      }
-      const dx = point[0] - path[first][0], dy = point[1] - path[first][1];
-      const norm = Math.hypot(dx, dy);
-      return norm ? [dx / norm, dy / norm] : null;
-    }
-    for (let i = 0; i < paths.length; i++) {
-      const path = paths[i];
-      if (path.length < 2) continue;
-      const a = path[0], b = path[path.length - 1];
-      if (a[0] === b[0] && a[1] === b[1]) {
-        // A self-closing branch is already a complete loop. Do not route a
-        // different stroke through it merely because it meets a junction.
-        closed[i] = 1;
-        continue;
-      }
-      for (let side = 0; side < 2; side++) {
-        const point = side ? b : a;
-        const tangent = outgoingTangent(path, side);
-        if (!tangent) continue;
-        const key = point[0] + "," + point[1];
-        if (!vertices.has(key)) vertices.set(key, []);
-        vertices.get(key).push({ endpoint: i * 2 + side, tangent: tangent });
-      }
-    }
-    for (const endpoints of vertices.values()) {
-      const remaining = endpoints.slice();
-      while (remaining.length >= 2) {
-        let bestDot = -Math.SQRT1_2, bestA = -1, bestB = -1;
-        for (let a = 0; a < remaining.length - 1; a++) {
-          for (let b = a + 1; b < remaining.length; b++) {
-            const u = remaining[a].tangent, v = remaining[b].tangent;
-            const dot = u[0] * v[0] + u[1] * v[1];
-            // Pair the most nearly opposite outgoing directions, allowing
-            // at most 45 degrees away from a straight continuation.
-            if (dot <= bestDot) { bestDot = dot; bestA = a; bestB = b; }
-          }
-        }
-        if (bestA < 0) break;
-        const a = remaining[bestA].endpoint, b = remaining[bestB].endpoint;
-        paired[a] = b;
-        paired[b] = a;
-        remaining.splice(bestB, 1);
-        remaining.splice(bestA, 1);
-      }
-    }
-    const used = new Uint8Array(paths.length), joined = [];
-    function follow(start) {
-      let entry = start;
-      const result = [];
-      while (entry >= 0) {
-        const index = Math.floor(entry / 2), side = entry & 1;
-        if (used[index]) break;
-        used[index] = 1;
-        const path = paths[index];
-        if (side) {
-          for (let i = path.length - 1; i >= 0; i--) {
-            if (i === path.length - 1 && result.length) continue;
-            result.push(path[i]);
-          }
-        } else {
-          for (let i = 0; i < path.length; i++) {
-            if (i === 0 && result.length) continue;
-            result.push(path[i]);
-          }
-        }
-        entry = paired[index * 2 + (1 - side)];
-      }
-      joined.push(result);
-    }
-    // Start open trails at a free end; fully paired components are cycles and
-    // are visited in the second pass. Every source path remains used once.
-    for (let i = 0; i < paths.length; i++) {
-      if (used[i]) continue;
-      if (closed[i] || paths[i].length < 2) { used[i] = 1; joined.push(paths[i]); continue; }
-      if (paired[i * 2] < 0) follow(i * 2);
-      else if (paired[i * 2 + 1] < 0) follow(i * 2 + 1);
-    }
-    for (let i = 0; i < paths.length; i++) if (!used[i]) follow(i * 2);
-    return joined;
-  }
-
-  function simplifyOpen(points, tolerance) {
-    if (points.length <= 2 || tolerance === 0) return points;
-    const keep = new Uint8Array(points.length);
-    keep[0] = keep[points.length - 1] = 1;
-    const stack = [[0, points.length - 1]], threshold = tolerance * tolerance;
-    while (stack.length) {
-      const range = stack.pop(), first = range[0], last = range[1];
-      let greatest = threshold, split = -1;
-      for (let i = first + 1; i < last; i++) {
-        const distance = segmentDistanceSquared(points[i], points[first], points[last]);
-        if (distance > greatest) { greatest = distance; split = i; }
-      }
-      if (split !== -1) {
-        keep[split] = 1;
-        if (split - first > 1) stack.push([first, split]);
-        if (last - split > 1) stack.push([split, last]);
-      }
-    }
-    return points.filter(function (_, i) { return keep[i]; });
-  }
-
-  function simplify(points, tolerance) {
-    if (points.length < 4) return simplifyOpen(points, tolerance);
-    const a = points[0], b = points[points.length - 1];
-    if (a[0] !== b[0] || a[1] !== b[1]) return simplifyOpen(points, tolerance);
-    // Split a closed cycle into two open arcs. Simplifying a zero-length
-    // start/end segment directly can erase the entire loop at large tolerance.
-    let split = 1, distance = -1;
-    for (let i = 1; i < points.length - 1; i++) {
-      const d = (points[i][0] - a[0]) ** 2 + (points[i][1] - a[1]) ** 2;
-      if (d > distance) { distance = d; split = i; }
-    }
-    const first = simplifyOpen(points.slice(0, split + 1), tolerance);
-    const second = simplifyOpen(points.slice(split), tolerance);
-    const result = first.concat(second.slice(1));
-    return result.length >= 4 ? result : points;
-  }
-
-  function orderPaths(paths) {
-    if (paths.length < 2) return paths;
-    const pending = paths.slice(), ordered = [pending.shift()];
-    while (pending.length) {
-      const current = ordered[ordered.length - 1];
-      const end = current[current.length - 1];
-      let bestIndex = 0, bestDistance = Infinity, reverse = false;
-      for (let i = 0; i < pending.length; i++) {
-        const path = pending[i];
-        for (let side = 0; side < 2; side++) {
-          const p = path[side ? path.length - 1 : 0];
-          const distance = (end[0] - p[0]) ** 2 + (end[1] - p[1]) ** 2;
-          if (distance < bestDistance) { bestDistance = distance; bestIndex = i; reverse = !!side; }
-        }
-      }
-      const path = pending.splice(bestIndex, 1)[0];
-      if (reverse) path.reverse();
-      ordered.push(path);
-    }
-    return ordered;
-  }
-
-  function extract(mask, width, height, options) {
-    options = options || {};
-    const minBranchLength = nonnegativeOption(options.minBranchLength, 2, "minBranchLength");
-    const simplifyTolerance = nonnegativeOption(options.simplifyTolerance, 0.65, "simplifyTolerance");
-    const joinJunctions = options.joinJunctions === undefined ? true : options.joinJunctions;
-    if (typeof joinJunctions !== "boolean") throw new TypeError("joinJunctions must be a boolean.");
-    const skeleton = thin(mask, width, height);
-    pruneTerminalSpurs(skeleton, width, height, minBranchLength);
-    let paths = traceChecked(skeleton, width, height);
-    if (joinJunctions) paths = joinAtJunctions(paths);
-    return orderPaths(paths.map(function (path) {
-      return simplify(path, simplifyTolerance);
-    }));
-  }
-
-  const api = Object.freeze({ thin: thin, trace: trace, extract: extract });
-  root.HeitiSkeleton = api;
-  if (typeof module !== "undefined" && module.exports) module.exports = api;
-})(typeof globalThis !== "undefined" ? globalThis : this);
+  const api=Object.freeze({validate, normalize});
+  root.HeitiStrokeOrder=api;
+  if (typeof module!=="undefined" && module.exports) module.exports=api;
+})(typeof globalThis!=="undefined" ? globalThis : this);
 
 </script>
 <script>
-/* Black-font rasterization and single-line extraction; embedded in create_hanzi.html. */
+globalThis.HeitiStrokeData={"方":{"medians":[[[446,823],[543,758],[557,745],[578,706]],[[148,522],[214,514],[511,565],[812,600],[874,592],[910,580]],[[518,437],[534,438],[649,409],[688,383],[695,370],[660,237],[635,160],[606,100],[584,71],[557,50],[423,122]],[[481,534],[503,510],[507,492],[418,339],[344,241],[288,184],[225,133],[122,77]]],"strokeCount":4},"寸":{"medians":[[[142,505],[155,497],[207,488],[477,534],[834,575],[919,547]],[[562,808],[584,796],[618,763],[612,466],[619,91],[597,36],[552,48],[450,92]],[[325,418],[408,347],[429,300]]],"strokeCount":3},"江":{"medians":[[[239,768],[318,705],[336,664]],[[159,555],[221,504],[243,467]],[[193,57],[183,89],[185,143],[213,179],[359,415]],[[454,579],[478,572],[547,575],[763,627],[835,632]],[[587,555],[626,527],[634,513],[615,276],[612,256],[594,236]],[[323,189],[373,179],[524,200],[865,232],[910,229],[961,212]]],"strokeCount":6},"宁":{"medians":[[[458,853],[548,806],[583,766]],[[241,683],[251,649],[235,607],[192,533],[181,479]],[[276,619],[303,632],[644,690],[765,704],[827,696],[850,677],[858,658],[766,570]],[[257,409],[316,403],[522,438],[727,460],[802,441]],[[496,404],[532,387],[544,368],[543,76],[538,44],[522,12],[513,13],[394,65]]],"strokeCount":5},"南":{"medians":[[[315,643],[356,635],[410,638],[652,683],[695,682]],[[476,844],[515,796],[455,519],[435,500]],[[158,467],[185,437],[198,410],[204,299],[200,119],[212,53]],[[207,456],[235,445],[467,482],[779,508],[808,508],[832,493],[848,471],[841,296],[832,186],[813,88],[782,39],[685,76],[666,91]],[[362,426],[404,373],[408,356]],[[564,468],[585,438],[537,350],[518,335]],[[339,300],[385,294],[577,326],[655,324]],[[316,190],[368,186],[615,219],[661,215],[689,206]],[[454,282],[485,258],[483,21]]],"strokeCount":9},"京":{"medians":[[[443,848],[530,797],[558,764]],[[128,630],[194,621],[387,653],[820,698],[868,693],[918,676]],[[318,529],[362,479],[403,331]],[[339,535],[393,519],[522,538],[605,558],[630,561],[649,556],[669,543],[685,522],[649,441],[614,416]],[[420,351],[434,366],[599,389],[650,387],[669,380]],[[485,350],[521,318],[523,102],[516,53],[494,15],[456,29],[396,66]],[[304,266],[279,204],[206,93]],[[648,266],[783,170],[812,122],[822,89]]],"strokeCount":8},"永":{"medians":[[[428,824],[503,781],[533,756],[539,741]],[[309,579],[358,580],[462,613],[482,608],[508,581],[505,121],[500,59],[478,24],[355,78]],[[110,391],[149,384],[198,387],[322,418],[339,417],[367,402],[345,333],[273,208],[201,129],[125,78]],[[725,621],[743,596],[749,578],[743,570],[656,489],[569,421],[569,415]],[[532,441],[551,399],[568,378],[678,259],[750,194],[801,163],[954,145]]],"strokeCount":5},"中":{"medians":[[[194,598],[229,572],[236,553],[295,323]],[[262,591],[281,579],[471,611],[719,641],[741,638],[777,596],[732,460],[702,446]],[[316,350],[330,365],[689,409],[749,405],[768,398]],[[449,823],[476,817],[513,781],[505,656],[499,-10]]],"strokeCount":4},"国":{"medians":[[[216,745],[248,707],[256,623],[246,321],[219,96],[224,25]],[[291,684],[303,700],[346,708],[722,759],[764,754],[798,723],[804,714],[803,582],[828,151],[825,102],[815,68],[823,1]],[[369,565],[390,559],[430,560],[524,576],[618,601],[663,599]],[[359,390],[407,382],[581,414],[643,409]],[[478,546],[506,521],[509,442],[505,277],[489,254]],[[318,208],[373,204],[632,246],[668,244],[713,231]],[[657,375],[719,338],[745,302]],[[257,50],[273,67],[320,72],[709,104],[772,98]]],"strokeCount":8},"黑":{"medians":[[[238,742],[263,724],[283,688],[339,463]],[[285,742],[321,730],[403,745],[653,774],[692,773],[713,766],[745,725],[663,499]],[[365,650],[409,606],[420,583]],[[606,694],[626,667],[564,589]],[[361,480],[376,494],[578,522],[619,522],[641,509]],[[464,730],[500,708],[503,667],[498,315],[481,292]],[[347,369],[382,369],[602,404],[645,396]],[[269,248],[323,241],[409,257],[663,288],[722,283],[753,272]],[[187,160],[172,94],[133,0]],[[336,144],[386,92],[403,55]],[[515,174],[577,113],[595,79]],[[733,188],[849,89],[876,50],[886,15]]],"strokeCount":12},"体":{"medians":[[[299,785],[316,770],[334,735],[296,659],[179,486],[104,401],[67,370]],[[226,509],[230,479],[245,448],[245,304],[228,98],[234,38]],[[344,540],[403,537],[514,563],[734,602],[794,603],[842,592]],[[537,817],[577,780],[587,757],[579,197],[565,58],[568,-26]],[[558,545],[544,530],[539,502],[521,461],[447,343],[354,236],[293,187]],[[606,532],[617,502],[699,391],[750,329],[812,269],[968,225]],[[435,212],[469,206],[652,240],[703,236]]],"strokeCount":7},"轨":{"medians":[[[148,602],[202,598],[370,642],[442,651]],[[298,819],[330,762],[253,549],[193,409],[186,374],[231,373],[396,421],[424,415]],[[306,507],[335,471],[322,77],[333,-12]],[[100,206],[155,189],[452,313]],[[587,740],[628,698],[618,544],[589,370],[558,272],[501,147],[416,30]],[[448,462],[474,457],[514,462],[644,500],[718,530],[758,530],[769,520],[746,405],[737,276],[744,201],[753,164],[775,116],[792,92],[843,47],[880,31],[910,31],[927,77],[946,202]]],"strokeCount":6},"迹":{"medians":[[[551,802],[637,743],[658,714]],[[380,564],[425,559],[648,606],[810,630],[882,616]],[[512,557],[541,540],[550,527],[550,452],[539,365],[524,310],[491,251],[458,214],[422,191]],[[643,581],[671,561],[679,548],[681,209],[673,180],[658,162],[572,199]],[[448,431],[431,380],[389,303]],[[706,441],[820,371],[836,356],[859,316]],[[221,756],[300,708],[320,686],[333,660]],[[101,462],[142,464],[235,502],[258,501],[282,485],[279,444],[247,380],[241,349],[251,310],[286,237],[288,205],[275,187]],[[89,132],[131,121],[222,158],[288,163],[358,145],[587,53],[723,18],[805,12],[897,28],[927,40]]],"strokeCount":9},"阿":{"medians":[[[227,701],[239,692],[323,723],[343,725],[355,724],[369,711],[322,604],[314,571],[316,558],[373,461],[379,435],[376,406],[371,398],[333,400],[254,429]],[[150,726],[191,679],[198,585],[197,266],[190,173],[174,82],[174,14]],[[426,628],[455,621],[492,624],[639,653],[859,680],[939,663]],[[432,499],[457,477],[462,465],[493,299]],[[486,494],[498,487],[600,513],[620,509],[631,499],[640,488],[617,401],[592,383]],[[512,332],[522,342],[584,355],[642,347]],[[724,633],[765,607],[768,596],[771,88],[763,63],[745,38],[693,55],[629,89]]],"strokeCount":7},"里":{"medians":[[[241,716],[270,697],[295,663],[336,461],[362,387]],[[292,713],[330,700],[662,750],[706,750],[727,744],[760,705],[710,535],[669,431],[672,398]],[[398,560],[561,589],[602,592],[626,586]],[[380,432],[392,421],[635,458]],[[461,698],[501,674],[508,618],[498,142],[478,121]],[[327,257],[399,248],[536,267],[633,292],[667,294],[691,288]],[[117,67],[178,55],[409,87],[836,124],[891,116],[942,97]]],"strokeCount":7},"巴":{"medians":[[[305,655],[319,644],[333,646],[602,722],[643,722],[668,703],[684,679],[634,537],[602,513]],[[434,651],[460,626],[448,496],[425,479]],[[279,431],[293,422],[314,425],[592,483],[649,488],[678,480]],[[215,686],[247,653],[262,621],[252,547],[246,388],[254,270],[266,205],[274,181],[295,150],[343,116],[456,89],[610,83],[773,100],[845,124],[876,145],[878,160],[875,352]]],"strokeCount":4},"普":{"medians":[[[348,802],[417,743],[424,728]],[[618,849],[636,829],[642,809],[549,718],[539,716],[537,708]],[[291,640],[313,632],[364,631],[587,663],[645,677],[696,684],[721,681]],[[390,609],[426,583],[430,427],[427,406],[416,399]],[[546,631],[570,616],[574,585],[564,427],[546,416]],[[256,536],[304,484],[322,446]],[[762,544],[727,555],[641,474]],[[84,346],[138,335],[361,367],[850,409],[934,385]],[[317,282],[345,261],[353,220],[354,118],[339,13],[342,-26]],[[380,250],[400,265],[613,306],[652,279],[657,272],[659,19],[647,-13],[587,2]],[[380,136],[393,147],[434,155],[525,166],[558,159]],[[369,-3],[386,11],[483,23],[560,29],[603,21]]],"strokeCount":12},"惠":{"medians":[[[333,719],[374,713],[422,716],[554,739],[645,763],[685,761]],[[290,614],[310,599],[328,573],[367,411]],[[337,614],[360,604],[590,647],[696,653],[708,645],[727,616],[671,477],[669,446]],[[419,527],[477,535],[551,557],[588,561],[608,556]],[[389,435],[394,443],[415,448],[638,488]],[[468,839],[509,806],[517,796],[518,780],[510,386],[492,362]],[[296,317],[344,296],[615,369],[641,367]],[[635,409],[701,342],[715,300]],[[243,232],[234,170],[197,80],[192,51]],[[334,214],[347,198],[383,121],[444,65],[498,42],[607,24],[728,31],[755,41],[776,60],[766,89],[701,206]],[[489,266],[550,216],[565,190]],[[767,290],[875,229],[898,204],[914,171]]],"strokeCount":12},"我":{"medians":[[[458,627],[392,631],[336,588],[274,552],[258,550],[253,542],[220,530],[212,532],[203,522]],[[174,404],[215,398],[241,402],[672,514],[742,512]],[[323,556],[351,542],[365,522],[361,116],[340,67],[246,113]],[[100,206],[124,195],[163,189],[492,334]],[[492,807],[537,760],[538,627],[569,435],[612,299],[676,170],[717,112],[779,48],[817,22],[859,12],[880,78],[891,140],[886,147],[894,173]],[[723,412],[737,365],[664,259],[594,198],[489,142],[454,132]],[[657,710],[750,668],[781,634]]],"strokeCount":7},"爱":{"medians":[[[627,780],[561,797],[461,752],[338,722]],[[304,669],[371,616],[382,590]],[[456,690],[499,644],[512,620]],[[660,736],[679,704],[603,622],[585,612],[583,602]],[[211,545],[221,510],[202,458],[172,402],[168,355]],[[248,481],[264,492],[364,514],[466,532],[475,529],[484,536],[499,534],[554,547],[740,570],[785,564],[809,541],[811,529],[734,451]],[[283,387],[337,380],[604,435],[639,438],[674,432]],[[435,506],[455,489],[463,464],[419,361],[367,263],[321,197],[262,129],[188,70],[148,46]],[[410,275],[433,287],[574,316],[594,305],[607,284],[580,201],[560,162],[528,118],[490,80],[410,39],[354,23],[265,10]],[[391,228],[421,220],[458,198],[586,87],[682,26],[720,11],[898,6]]],"strokeCount":10},"你":{"medians":[[[317,812],[342,786],[353,759],[303,663],[249,577],[181,485],[93,386],[68,367]],[[273,558],[274,525],[285,495],[284,441],[273,243],[256,123],[260,41]],[[556,828],[574,817],[595,783],[584,746],[539,640],[481,531],[428,453],[406,431]],[[513,532],[704,585],[796,597],[813,585],[827,563],[798,519],[746,460]],[[586,463],[615,438],[632,412],[627,73],[616,41],[604,30],[558,47],[490,85]],[[455,316],[437,243],[397,151]],[[742,326],[812,265],[856,216],[871,190],[878,154]]],"strokeCount":7},"重":{"medians":[[[668,760],[601,776],[512,731],[429,701],[419,703],[354,682],[345,685],[320,674]],[[142,553],[200,545],[366,575],[794,623],[842,619],[890,605]],[[286,475],[307,458],[322,428],[361,235]],[[327,479],[362,464],[651,501],[688,496],[704,487],[725,458],[674,278],[679,256]],[[416,367],[564,390],[606,384]],[[380,254],[389,261],[634,294]],[[475,692],[508,675],[517,621],[509,71],[507,57],[490,40]],[[357,145],[407,136],[606,163],[667,154]],[[202,3],[256,-7],[563,23],[764,33],[800,30],[850,12]]],"strokeCount":9},"写":{"medians":[[[268,748],[281,716],[279,695],[228,582],[225,533]],[[314,712],[328,702],[366,703],[495,728],[699,752],[745,743],[759,733],[773,707],[686,625]],[[435,500],[451,511],[524,521],[621,550],[672,546]],[[389,634],[412,612],[420,594],[373,347],[428,346],[542,372],[692,389],[735,383],[768,354],[730,141],[709,73],[690,39],[659,20],[554,91]],[[169,180],[194,171],[239,170],[320,191],[551,230],[625,212]]],"strokeCount":5},"田":{"medians":[[[168,630],[204,600],[225,563],[253,357],[267,183],[285,124]],[[234,618],[277,600],[518,632],[739,675],[770,675],[804,655],[823,634],[792,401],[761,236],[746,196],[726,169],[724,108]],[[346,392],[383,391],[601,427],[642,430],[665,423]],[[468,608],[503,582],[502,251],[484,228]],[[305,171],[320,185],[393,194],[604,216],[696,217]]],"strokeCount":5},"口":{"medians":[[[229,584],[272,548],[287,517],[330,203],[348,152]],[[304,569],[333,552],[488,574],[663,608],[700,607],[720,598],[759,559],[758,552],[694,295],[661,273]],[[369,185],[394,203],[651,238],[710,236],[744,224]]],"strokeCount":3},"日":{"medians":[[[284,684],[321,646],[328,617],[332,516],[323,261],[302,136],[302,70]],[[359,660],[374,648],[388,650],[635,703],[668,687],[690,665],[699,450],[699,159],[685,105],[688,37]],[[357,413],[369,404],[398,404],[534,432],[581,431]],[[340,106],[355,119],[432,130],[585,147],[632,143]]],"strokeCount":4},"月":{"medians":[[[339,773],[379,742],[387,685],[385,504],[366,342],[341,259],[296,169],[236,93],[184,43],[145,17]],[[415,764],[429,752],[503,762],[634,796],[666,780],[681,758],[687,291],[683,93],[664,56],[632,63],[538,104]],[[417,542],[430,550],[535,566],[588,564]],[[399,368],[413,375],[535,394],[588,392]]],"strokeCount":4},"木":{"medians":[[[228,534],[280,522],[695,584],[728,584],[766,574]],[[453,825],[506,771],[498,218],[486,-29]],[[474,519],[459,504],[447,460],[404,389],[332,297],[244,206],[179,154],[130,124]],[[528,513],[549,470],[641,344],[749,220],[789,200],[951,159]]],"strokeCount":4},"水":{"medians":[[[473,814],[500,795],[521,770],[508,455],[507,91],[485,42],[442,56],[371,91],[369,98],[358,98]],[[147,491],[209,482],[354,512],[381,505],[392,495],[384,459],[353,387],[280,261],[187,160],[113,110]],[[737,682],[750,671],[766,637],[721,583],[591,461],[590,452]],[[539,500],[550,465],[618,387],[729,271],[782,229],[820,207],[990,185]]],"strokeCount":4},"火":{"medians":[[[216,534],[299,440],[316,391]],[[714,618],[736,593],[744,571],[696,522],[587,433]],[[436,773],[475,753],[497,733],[503,713],[488,443],[470,321],[456,275],[418,195],[368,138],[279,78],[174,36]],[[513,375],[521,341],[606,223],[689,127],[745,76],[768,60],[934,25]]],"strokeCount":4},"人":{"medians":[[[483,736],[508,702],[511,678],[473,552],[408,416],[328,303],[271,244],[144,139],[72,95]],[[474,477],[477,459],[490,439],[571,333],[691,200],[753,145],[798,119],[986,90]]],"strokeCount":2},"大":{"medians":[[[210,458],[268,453],[514,503],[719,534],[770,529],[810,517]],[[416,810],[444,799],[482,759],[469,518],[448,394],[426,320],[386,231],[361,196],[307,140],[202,67],[138,41]],[[486,430],[500,393],[576,284],[660,182],[722,118],[774,77],[953,42]]],"strokeCount":3},"小":{"medians":[[[484,773],[501,765],[533,730],[525,545],[532,191],[528,90],[510,54],[459,68],[358,112]],[[280,476],[254,405],[170,274]],[[709,494],[800,425],[848,380],[866,353],[879,311]]],"strokeCount":3},"上":{"medians":[[[446,781],[462,775],[498,734],[493,159],[472,136]],[[531,448],[551,462],[627,473],[698,493],[768,496]],[[134,92],[171,76],[212,72],[458,103],[841,132],[932,99]]],"strokeCount":3},"下":{"medians":[[[113,682],[145,669],[181,664],[440,706],[807,745],[870,736],[903,726],[924,710]],[[487,681],[516,656],[519,479],[510,-2]],[[555,519],[562,502],[645,466],[706,429],[729,407],[748,377]]],"strokeCount":3},"左":{"medians":[[[267,537],[291,529],[357,528],[521,555],[701,594],[757,594]],[[470,826],[519,780],[512,707],[488,594],[417,422],[354,312],[278,211],[182,117],[68,38]],[[411,319],[432,312],[497,313],[694,352],[741,349]],[[531,293],[559,264],[553,116],[534,101]],[[283,53],[335,43],[508,66],[784,90],[827,85],[878,68]]],"strokeCount":5},"右":{"medians":[[[143,506],[201,497],[394,533],[812,587],[872,583],[922,568]],[[467,792],[513,742],[499,647],[472,556],[399,401],[321,281],[267,218],[154,118],[65,63]],[[380,301],[424,12]],[[415,273],[435,290],[530,305],[654,337],[680,340],[703,333],[736,300],[699,157],[671,135]],[[446,52],[463,67],[662,103],[720,106],[746,97]]],"strokeCount":5}};
+/* PuHuiTi reference glyphs plus directed, ordered stroke data. No skeleton guessing. */
 (() => {
   "use strict";
   const BOARD_Y = 1.5, BOARD_Z = 0.9;
-  const FONT_KEY = "noto-sans-cjk-sc-regular-2.004";
+  const FONT_KEY = "alibaba-puhuiti-3-55-regular-3.01";
   const FONT_URLS = [
-    "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@Sans2.004/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf",
-    "https://raw.githubusercontent.com/notofonts/noto-cjk/Sans2.004/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf"
+    "https://cdn.jsdelivr.net/npm/@fontpkg/alibaba-pu-hui-ti-3-0@3.1.2/AlibabaPuHuiTi-3-55-Regular.ttf",
+    "https://unpkg.com/@fontpkg/alibaba-pu-hui-ti-3-0@3.1.2/AlibabaPuHuiTi-3-55-Regular.ttf"
   ];
   const el = Object.fromEntries([
     "text", "size", "gap", "centerY", "centerZ", "step", "detail", "zoom",
     "showPoints", "showMoves", "showReference", "generate", "download", "status",
-    "canvas", "loadFont", "fontFile", "fontStatus"
+    "canvas", "loadFont", "fontStatus", "showOrder", "playOrder", "orderStatus"
   ].map((name) => [name, document.getElementById("heiti-" + name)]));
   for (const name of ["penUpHoldCount", "penDownHoldCount", "publishFrequency", "waitTimes"]) {
     el[name] = document.getElementById(name);
   }
   const state = {
     points: [], bounds: null, pending: false, font: null, cache: new Map(),
-    settings: null, glyphs: [], fontSequence: 0
+    settings: null, glyphs: [], fontSequence: 0, orderCache: new Map(),
+    visibleStroke: null, playbackTimer: null, signature: null
   };
 
   // Shared trajectory sampling and preview routines are inserted here by the page assembler.
@@ -2296,7 +1901,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     }
 
     function addPoint(points, y, z, penDown, label) {
-      if (points.length >= 250000) throw new Error("轨迹点数过多，请减少等待点数或增大采样间距。");
+      if(points.length>=250000)throw new Error("轨迹点数过多，请减少等待点数或增大采样间距。");
       points.push({
         x: 0,
         y: Number(y.toFixed(6)),
@@ -2329,11 +1934,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     }
 
     function calculateBounds(points) {
-      const box = { minY: Infinity, maxY: -Infinity, minZ: Infinity, maxZ: -Infinity };
-      for (const point of points) {
-        box.minY = Math.min(box.minY, point.y); box.maxY = Math.max(box.maxY, point.y);
-        box.minZ = Math.min(box.minZ, point.z); box.maxZ = Math.max(box.maxZ, point.z);
-      }
+      const box={minY:Infinity,maxY:-Infinity,minZ:Infinity,maxZ:-Infinity};
+      for(const p of points){box.minY=Math.min(box.minY,p.y);box.maxY=Math.max(box.maxY,p.y);box.minZ=Math.min(box.minZ,p.z);box.maxZ=Math.max(box.maxZ,p.z);}
       return box;
     }
 
@@ -2366,12 +1968,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
           // 在每笔起点按设置追加同坐标的抬笔、落笔等待点。
           for (let hold = 0; hold < settings.hold.upHoldCount; hold += 1) {
-            if (points.length >= 250000) throw new Error("轨迹点数过多，请减少等待点数。");
+            if(points.length>=250000)throw new Error("等待点数过多，请减少设置。");
             points.push({ ...points[points.length - 1] });
           }
           addPoint(points, stroke[0].y, stroke[0].z, true, label + "_down");
           for (let hold = 0; hold < settings.hold.downHoldCount; hold += 1) {
-            if (points.length >= 250000) throw new Error("轨迹点数过多，请减少等待点数。");
+            if(points.length>=250000)throw new Error("等待点数过多，请减少设置。");
             points.push({ ...points[points.length - 1] });
           }
 
@@ -2475,6 +2077,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       context.lineCap = "round";
       context.lineJoin = "round";
       for (let index = 1; index < state.points.length; index += 1) {
+        if(state.visibleStroke!==null && strokeNumber(state.points[index])>state.visibleStroke)continue;
         const previous = pixel(state.points[index - 1]);
         const current = pixel(state.points[index]);
         const penDown = state.points[index].pen_down;
@@ -2493,6 +2096,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       if (el.showPoints.checked) {
         const pointRadius = state.points.length > 500 ? 1 : 1.6;
         state.points.forEach((point) => {
+          if(state.visibleStroke!==null && strokeNumber(point)>state.visibleStroke)return;
           if (!point.pen_down) return;
           const p = pixel(point);
           context.beginPath();
@@ -2501,12 +2105,43 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           context.fill();
         });
       }
+      drawOrder(context,pixel);
     }
 
     function setStatus(message, error = false) {
       el.status.textContent = message;
       el.status.classList.toggle("error", error);
     }
+
+
+    const LATIN_GLYPHS = {
+      A: [[[-0.40, -0.50], [0.00, 0.50], [0.40, -0.50]], [[-0.22, 0.00], [0.22, 0.00]]],
+      B: [[[-0.35, 0.50], [-0.35, -0.50]], [[-0.35, 0.50], [0.12, 0.50], [0.35, 0.30], [0.12, 0.05], [-0.35, 0.05]], [[-0.35, 0.05], [0.15, 0.05], [0.38, -0.20], [0.15, -0.50], [-0.35, -0.50]]],
+      C: [[[0.40, 0.36], [0.20, 0.50], [-0.18, 0.50], [-0.40, 0.28], [-0.40, -0.28], [-0.18, -0.50], [0.20, -0.50], [0.40, -0.36]]],
+      D: [[[-0.35, 0.50], [-0.35, -0.50]], [[-0.35, 0.50], [0.10, 0.50], [0.40, 0.25], [0.40, -0.25], [0.10, -0.50], [-0.35, -0.50]]],
+      E: [[[-0.35, 0.50], [-0.35, -0.50]], [[-0.35, 0.50], [0.40, 0.50]], [[-0.35, 0.00], [0.25, 0.00]], [[-0.35, -0.50], [0.40, -0.50]]],
+      F: [[[-0.35, 0.50], [-0.35, -0.50]], [[-0.35, 0.50], [0.40, 0.50]], [[-0.35, 0.00], [0.25, 0.00]]],
+      G: [[[0.40, 0.34], [0.20, 0.50], [-0.18, 0.50], [-0.40, 0.28], [-0.40, -0.28], [-0.18, -0.50], [0.22, -0.50], [0.40, -0.28], [0.40, 0.00], [0.08, 0.00]]],
+      H: [[[-0.38, 0.50], [-0.38, -0.50]], [[0.38, 0.50], [0.38, -0.50]], [[-0.38, 0.00], [0.38, 0.00]]],
+      I: [[[-0.35, 0.50], [0.35, 0.50]], [[0.00, 0.50], [0.00, -0.50]], [[-0.35, -0.50], [0.35, -0.50]]],
+      J: [[[-0.20, 0.50], [0.38, 0.50]], [[0.20, 0.50], [0.20, -0.30], [0.05, -0.50], [-0.22, -0.50], [-0.38, -0.30]]],
+      K: [[[-0.38, 0.50], [-0.38, -0.50]], [[0.38, 0.50], [-0.38, -0.05]], [[-0.08, 0.18], [0.40, -0.50]]],
+      L: [[[-0.35, 0.50], [-0.35, -0.50], [0.40, -0.50]]],
+      M: [[[-0.40, -0.50], [-0.40, 0.50], [0.00, -0.05], [0.40, 0.50], [0.40, -0.50]]],
+      N: [[[-0.38, -0.50], [-0.38, 0.50], [0.38, -0.50], [0.38, 0.50]]],
+      O: [[[0.18, 0.50], [-0.18, 0.50], [-0.40, 0.28], [-0.40, -0.28], [-0.18, -0.50], [0.18, -0.50], [0.40, -0.28], [0.40, 0.28], [0.18, 0.50]]],
+      P: [[[-0.35, -0.50], [-0.35, 0.50]], [[-0.35, 0.50], [0.12, 0.50], [0.38, 0.28], [0.12, 0.02], [-0.35, 0.02]]],
+      Q: [[[0.18, 0.50], [-0.18, 0.50], [-0.40, 0.28], [-0.40, -0.28], [-0.18, -0.50], [0.18, -0.50], [0.40, -0.28], [0.40, 0.28], [0.18, 0.50]], [[0.08, -0.28], [0.42, -0.58]]],
+      R: [[[-0.35, -0.50], [-0.35, 0.50]], [[-0.35, 0.50], [0.12, 0.50], [0.38, 0.28], [0.12, 0.02], [-0.35, 0.02]], [[-0.05, 0.02], [0.40, -0.50]]],
+      S: [[[0.38, 0.34], [0.18, 0.50], [-0.18, 0.50], [-0.38, 0.28], [-0.20, 0.06], [0.20, -0.06], [0.38, -0.28], [0.18, -0.50], [-0.18, -0.50], [-0.38, -0.34]]],
+      T: [[[-0.42, 0.50], [0.42, 0.50]], [[0.00, 0.50], [0.00, -0.50]]],
+      U: [[[-0.38, 0.50], [-0.38, -0.25], [-0.18, -0.50], [0.18, -0.50], [0.38, -0.25], [0.38, 0.50]]],
+      V: [[[-0.42, 0.50], [0.00, -0.50], [0.42, 0.50]]],
+      W: [[[-0.45, 0.50], [-0.28, -0.50], [0.00, 0.05], [0.28, -0.50], [0.45, 0.50]]],
+      X: [[[-0.40, 0.50], [0.40, -0.50]], [[0.40, 0.50], [-0.40, -0.50]]],
+      Y: [[[-0.40, 0.50], [0.00, 0.00], [0.40, 0.50]], [[0.00, 0.00], [0.00, -0.50]]],
+      Z: [[[-0.40, 0.50], [0.40, 0.50], [-0.40, -0.50], [0.40, -0.50]]]
+    };
 
 
 
@@ -2574,27 +2209,27 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     el.fontStatus.textContent = "正在读取黑体字库缓存…";
     const cached = await cachedFont();
     if (cached) {
-      try { return await installFont(cached, "Noto Sans CJK SC Regular 2.004 · 已从缓存加载"); }
+      try { return await installFont(cached, "Alibaba PuHuiTi 3.0 Regular · 已从缓存加载"); }
       catch (_) { /* A corrupt cache must not prevent a fresh font download. */ }
     }
-    const localUrl = new URL("assets/fonts/NotoSansCJKsc-Regular.otf", document.baseURI);
+    const localUrl = new URL("assets/fonts/AlibabaPuHuiTi-3-55-Regular.ttf", document.baseURI);
     const urls = location.protocol === "file:" ? FONT_URLS : [localUrl.href, ...FONT_URLS];
     for (const url of urls) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 45000);
       try {
-        el.fontStatus.textContent = "正在加载 Noto 黑体（约 16 MB），首次下载请稍候…";
+        el.fontStatus.textContent = "正在加载 Alibaba PuHuiTi 3.0（约 8.5 MB），请稍候…";
         const response = await fetch(url, { signal: controller.signal, cache: "force-cache" });
         if (!response.ok) throw new Error("字体下载 HTTP " + response.status);
         const buffer = await response.arrayBuffer();
-        const font = await installFont(buffer, "Noto Sans CJK SC Regular 2.004 · 已加载");
+        const font = await installFont(buffer, "Alibaba PuHuiTi 3.0 Regular · 已加载");
         const saved = await cachedFont(buffer);
         if (saved) el.fontStatus.textContent += "，已缓存";
         return font;
       } catch (_) { /* Try the pinned official-source fallback. */ }
       finally { clearTimeout(timeout); }
     }
-    throw new Error("黑体字库加载失败。请检查网络，或下载 Noto 字库后用下方按钮导入 .otf/.ttf 文件。");
+    throw new Error("普惠体字库加载失败，请检查网络后重试；此模块不会用其他字体静默替代。");
   }
 
   function rasterGlyph(character, resolution) {
@@ -2633,14 +2268,99 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if (maxX < 0) throw new Error("未能从“" + character + "”中读取可书写字形。");
     const centerX = (minX + maxX) / 2, centerY = (minY + maxY) / 2;
     const span = Math.max(maxX - minX, maxY - minY, 1);
-    const paths = HeitiSkeleton.extract(mask, resolution, resolution, {
-      minBranchLength: Math.max(1.5, resolution / 192), simplifyTolerance: resolution / 512
-    });
-    if (!paths.length) throw new Error("“" + character + "”的中线提取失败。");
-    const strokes = paths.map((path) => path.map(([x, y]) => [(x - centerX) / span, (centerY - y) / span]));
-    const glyph = { strokes, canvas, centerX, centerY, span, resolution };
+    // Raster is a visual font reference only. It must never determine stroke order.
+    const glyph = { canvas, centerX, centerY, span, resolution };
     state.cache.set(key, glyph);
     return glyph;
+  }
+
+  async function orderedGlyph(character, resolution) {
+    const reference = rasterGlyph(character, resolution);
+    if (/^[A-Za-z]$/.test(character)) {
+      return { ...reference, strokes: LATIN_GLYPHS[character.toUpperCase()], source: "内置英文字母单线" };
+    }
+    if (/^[0-9]$/.test(character)) {
+      const digits = {
+        "0": [[[-.3,.5],[.3,.5],[.3,-.5],[-.3,-.5],[-.3,.5]]],
+        "1": [[[-.15,.3],[.05,.5],[.05,-.5]]],
+        "2": [[[-.3,.35],[-.15,.5],[.2,.5],[.3,.3],[-.3,-.5],[.3,-.5]]],
+        "3": [[[-.3,.5],[.3,.5],[0,0],[.3,-.2],[.2,-.5],[-.3,-.5]]],
+        "4": [[[.2,.5],[-.3,-.15],[.35,-.15]],[[.2,.5],[.2,-.5]]],
+        "5": [[[.3,.5],[-.3,.5],[-.3,0],[.2,0],[.3,-.2],[.2,-.5],[-.3,-.5]]],
+        "6": [[[.25,.5],[-.25,.3],[-.3,-.3],[-.15,-.5],[.2,-.5],[.3,-.25],[.15,0],[-.3,0]]],
+        "7": [[[-.3,.5],[.3,.5],[-.1,-.5]]],
+        "8": [[[0,0],[-.3,.25],[-.15,.5],[.15,.5],[.3,.25],[0,0],[-.3,-.25],[-.15,-.5],[.15,-.5],[.3,-.25],[0,0]]],
+        "9": [[[.3,0],[-.15,0],[-.3,.25],[-.15,.5],[.15,.5],[.3,.3],[.25,-.3],[-.25,-.5]]]
+      };
+      return { ...reference, strokes: digits[character], source: "内置数字单线" };
+    }
+    let data = state.orderCache.get(character) || globalThis.HeitiStrokeData[character];
+    const key = "hanzi-ordered-medians-2.0.1:" + character;
+    if (!data) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(key) || "null");
+        if (cached) data = HeitiStrokeOrder.validate(character, cached);
+      } catch (_) { /* Fetch a valid copy instead of trusting a corrupt cache. */ }
+    }
+    if (!data) {
+      for (const base of ["https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/", "https://unpkg.com/hanzi-writer-data@2.0.1/"]) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        try {
+          const response = await fetch(base + encodeURIComponent(character) + ".json", { cache:"force-cache", signal:controller.signal });
+          if (!response.ok) throw new Error("No stroke data");
+          data = HeitiStrokeOrder.validate(character, await response.json());
+          try { localStorage.setItem(key, JSON.stringify(data)); } catch (_) {}
+          break;
+        } catch (_) {} finally { clearTimeout(timeout); }
+      }
+    }
+    if (!data) throw new Error("“" + character + "”没有可用的逐笔数据，已停止生成；不会再从字体骨架猜笔顺。");
+    const checked = HeitiStrokeOrder.validate(character, data);
+    state.orderCache.set(character, checked);
+    return { ...reference, strokes:HeitiStrokeOrder.normalize(character, checked), source:"Hanzi Writer Data 2.0.1" };
+  }
+
+  function strokeNumber(point) {
+    const match = /^char(\d+)_stroke(\d+)/.exec(point.label);
+    if (!match || !state.settings) return null;
+    return state.glyphs.slice(0, Number(match[1])-1).reduce((n,g) => n+g.strokes.length,0) + Number(match[2]);
+  }
+
+  function drawOrder(context, pixel) {
+    if (!state.settings || !el.showOrder.checked) return;
+    const cfg=state.settings;
+    context.save(); context.font="bold 12px sans-serif";
+    state.glyphs.forEach((glyph,index) => {
+      const y=cfg.centerY+(0.5*(cfg.characters.length-1)-index)*(cfg.size+cfg.gap);
+      const before=state.glyphs.slice(0,index).reduce((n,g)=>n+g.strokes.length,0);
+      glyph.strokes.forEach((stroke,strokeIndex) => {
+        if (state.visibleStroke!==null && before+strokeIndex+1>state.visibleStroke) return;
+        const mapped=mapStroke(stroke,y,cfg.centerZ,cfg.size), start=pixel(mapped[0]);
+        const next=pixel(mapped.find(p=>Math.hypot(p.y-mapped[0].y,p.z-mapped[0].z)>0.001)||mapped[1]);
+        const angle=Math.atan2(next.y-start.y,next.x-start.x);
+        context.fillStyle="#ffd36b"; context.fillText(String(strokeIndex+1),start.x+4,start.y-5);
+        context.strokeStyle="#ffd36b"; context.lineWidth=1.5; context.setLineDash([]);
+        context.beginPath();context.moveTo(start.x,start.y);context.lineTo(start.x+12*Math.cos(angle),start.y+12*Math.sin(angle));context.stroke();
+      });
+    });context.restore();
+  }
+
+  function stopPlayback() {
+    if (state.playbackTimer!==null) clearTimeout(state.playbackTimer);
+    state.playbackTimer=null; state.visibleStroke=null; el.playOrder.textContent="逐笔播放";
+  }
+
+  function playOrder() {
+    if (!state.points.length) return;
+    if (state.playbackTimer!==null) { stopPlayback(); draw(); return; }
+    const total=state.glyphs.reduce((n,g)=>n+g.strokes.length,0);
+    let stroke=1;el.playOrder.textContent="停止播放";
+    function tick() {
+      if (stroke>total) { stopPlayback();draw();el.orderStatus.textContent="笔顺播放结束，共 "+total+" 笔。";return; }
+      state.visibleStroke=stroke;el.orderStatus.textContent="正在播放第 "+stroke+" / "+total+" 笔（预览忽略等待点）";
+      draw();stroke++;state.playbackTimer=setTimeout(tick,650);
+    }tick();
   }
 
   function drawReference(context, pixel, scale) {
@@ -2661,43 +2381,52 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   async function busy(action) {
     if (state.pending) return false;
     state.pending = true;
-    el.generate.disabled = el.loadFont.disabled = el.fontFile.disabled = el.download.disabled = true;
+    el.generate.disabled = el.loadFont.disabled = el.download.disabled = el.playOrder.disabled = true;
     try { await action(); return true; }
     catch (error) {
       setStatus(error instanceof Error ? error.message : String(error), true);
       return false;
     } finally {
       state.pending = false;
-      el.generate.disabled = el.loadFont.disabled = el.fontFile.disabled = false;
+      el.generate.disabled = el.loadFont.disabled = false;
       el.download.disabled = !state.points.length;
+      el.playOrder.disabled = !state.points.length;
     }
   }
 
   async function generate() {
     return busy(async () => {
+      stopPlayback();state.points=[];state.glyphs=[];state.settings=null;state.signature=null;draw();
       const cfg = readConfig();
       await ensureFont();
       const glyphs = [];
       for (const character of cfg.characters) {
-        setStatus("正在提取“" + character + "”的黑体单线中线…");
+        setStatus("正在校验“" + character + "”的逐笔顺序与书写方向…");
         await new Promise((resolve) => requestAnimationFrame(resolve));
-        glyphs.push(rasterGlyph(character, cfg.resolution));
+        glyphs.push(await orderedGlyph(character, cfg.resolution));
       }
       const points = makeTrajectory(cfg, glyphs.map((glyph) => glyph.strokes));
       state.points = points;
       state.bounds = calculateBounds(points);
       state.settings = cfg;
       state.glyphs = glyphs;
+      state.signature = JSON.stringify([cfg.characters,cfg.size,cfg.gap,cfg.centerY,cfg.centerZ,cfg.step,cfg.hold.upHoldCount,cfg.hold.downHoldCount]);
       draw();
       const paths = glyphs.reduce((count, glyph) => count + glyph.strokes.length, 0);
-      setStatus("已生成 " + points.length + " 个有序点\n单线路径：" + paths +
-        " 段（非传统笔顺）\ny_C：" + state.bounds.minY.toFixed(3) + " ~ " + state.bounds.maxY.toFixed(3) +
+      const summary=cfg.characters.map((c,i)=>c+" "+glyphs[i].strokes.length+"笔").join(" · ");
+      el.orderStatus.textContent=summary;
+      setStatus("已生成 " + points.length + " 个有序点\n逐笔数据：" + paths +
+        " 笔，保留原始顺序和方向\n" + summary + "\ny_C：" + state.bounds.minY.toFixed(3) + " ~ " + state.bounds.maxY.toFixed(3) +
         " m\nz_C：" + state.bounds.minZ.toFixed(3) + " ~ " + state.bounds.maxZ.toFixed(3) + " m");
     });
   }
 
   async function download() {
-    if (!state.points.length && !(await generate())) return;
+    if(state.pending)return;
+    let signature;
+    try { const c=readConfig();signature=JSON.stringify([c.characters,c.size,c.gap,c.centerY,c.centerZ,c.step,c.hold.upHoldCount,c.hold.downHoldCount]); }
+    catch (_) { await generate();return; }
+    if ((!state.points.length || signature!==state.signature) && !(await generate())) return;
     const content = JSON.stringify(state.points, null, 2) + "\n";
     const url = URL.createObjectURL(new Blob([content], { type: "application/json;charset=utf-8" }));
     const link = document.createElement("a");
@@ -2710,26 +2439,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   el.loadFont.addEventListener("click", () => busy(async () => {
     await ensureFont(); setStatus("黑体字库已就绪，请设置文字并生成轨迹。");
   }));
-  el.fontFile.addEventListener("change", () => {
-    const file = el.fontFile.files[0];
-    if (!file) return;
-    busy(async () => {
-      if (!/\.(otf|ttf)$/i.test(file.name) || file.size > 50 * 1024 * 1024) {
-        throw new Error("请导入不超过 50 MB 的 .otf 或 .ttf 字体文件。");
-      }
-      await installFont(await file.arrayBuffer(), "已导入：" + file.name);
-      setStatus("本地字体已就绪；点击生成轨迹应用当前字库。");
-    }).finally(() => { el.fontFile.value = ""; });
-  });
+  el.playOrder.addEventListener("click",playOrder);
   el.generate.addEventListener("click", generate);
   el.download.addEventListener("click", download);
-  for (const name of ["zoom", "showPoints", "showMoves", "showReference"]) {
+  for (const name of ["zoom", "showPoints", "showMoves", "showReference", "showOrder"]) {
     el[name].addEventListener("change", draw);
   }
-  document.addEventListener("hanzi-mode-change", (event) => { if (event.detail === "heiti") draw(); });
+  document.addEventListener("hanzi-mode-change", (event) => { if (event.detail === "heiti") draw();else stopPlayback(); });
   window.addEventListener("resize", draw);
   el.download.disabled = true;
-  setStatus("输入文字，点击生成黑体单线轨迹。首次使用需加载字库，也可导入本地字体。");
+  el.playOrder.disabled = true;
+  setStatus("普惠体用于字形参照；中文中线按逐笔数据生成，保留笔顺和起止方向。缺少笔顺数据的字会停止生成。");
 })();
 
 </script>
