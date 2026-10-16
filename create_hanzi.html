@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="中英文文字与自由手写轨迹生成器，支持黑板坐标预览、可调等待点数、等待时间估算和 JSON 导出。">
+  <meta name="description" content="中英文文字、黑体单线与自由手写轨迹生成器，支持黑板坐标预览、可调等待点数、等待时间估算和 JSON 导出。">
   <meta name="theme-color" content="#176443">
-  <title>汉字轨迹工作台 · 文字生成与自由手写</title>
+  <title>汉字轨迹工作台 · 文字、黑体单线与自由手写</title>
   <style>
     :root {
       color-scheme: light;
@@ -87,6 +87,20 @@
     @media (max-width: 1060px) { .wait-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .wait-times { grid-column: 1 / -1; } }
     @media (max-width: 850px) { main { width: calc(100% - 24px); padding: 20px 0; } .app-header { align-items: flex-start; } .board-badge { padding: 9px 12px; } .layout, .frame { grid-template-columns: 1fr; } aside { border-right: 0; border-bottom: 1px solid var(--line); } .mode-bar { align-items: flex-start; flex-direction: column; gap: 10px; } .preview-head { align-items: flex-start; flex-direction: column; gap: 8px; } #text-canvas { min-height: 420px; height: 55vh; } .canvas-wrap { min-height: 420px; height: 60vh; } }
     @media (max-width: 520px) { .app-header { flex-direction: column; gap: 12px; margin-bottom: 18px; } .board-badge { width: 100%; display: flex; align-items: center; gap: 14px; } .board-badge strong { font-size: 16px; } .mode-tabs { width: 100%; } .mode-tab { flex: 1; padding: 10px; } .wait-grid { grid-template-columns: 1fr 1fr; gap: 12px; } .frequency-field { grid-column: 1 / -1; } .wait-settings { padding: 12px; } aside, .preview { padding: 15px; } .workspace-head { align-items: flex-start; flex-direction: column; gap: 5px; } .canvas-wrap { min-height: 360px; padding: 5px; } }
+
+    select { width: 100%; height: 40px; padding: 0 9px; border: 1px solid #c8d0c5; border-radius: 8px; background: #fff; color: var(--ink); font: inherit; font-size: 13px; }
+    .heiti-font-panel { min-width: 0; margin: 0 0 16px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+    .heiti-font-panel legend { padding: 0 5px; font-size: 12px; font-weight: 700; }
+    .heiti-font-panel button { width: 100%; }
+    .heiti-import { margin: 12px 0 0; }
+    #heiti-fontFile { width: 100%; min-width: 0; font-size: 12px; }
+    #heiti-fontStatus { overflow-wrap: anywhere; }
+    #heiti-fontStatus.error { color: #9d2e20; }
+    #heiti-canvas { height: clamp(470px, 64vh, 760px); min-height: 470px; background: var(--board); flex: 1; }
+    #mode-heiti a { color: var(--accent); }
+    .font-license { margin-top: 12px; font-size: 12px; color: var(--muted); }
+    .font-license pre { max-height: 240px; overflow: auto; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--panel); }
+    @media(max-width:520px) { .mode-tab { gap: 4px; padding: 10px 6px; font-size: 12px; } .mode-tab svg { width: 15px; } #heiti-canvas { min-height: 360px; } }
   </style>
 </head>
 <body>
@@ -104,6 +118,9 @@
         <button id="tab-text" class="mode-tab" type="button" role="tab" aria-selected="true" aria-controls="mode-text" data-mode="text" tabindex="0">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 5h16M12 5v15M8 20h8M7 9h10"/></svg>文字生成
         </button>
+        <button id="tab-heiti" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="mode-heiti" data-mode="heiti" tabindex="-1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M4 6h16M7 11h10M12 3v18M5 20h14"/></svg>黑体单线
+        </button>
         <button id="tab-write" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="mode-write" data-mode="write" tabindex="-1">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m15 4 5 5M4 20l5-1L20 8a2 2 0 0 0-4-4L5 15l-1 5Z"/></svg>自由手写
         </button>
@@ -111,14 +128,14 @@
       <p id="modeHint" class="mode-hint">输入中英文，按笔画顺序生成轨迹。</p>
     </div>
     <fieldset class="wait-settings">
-      <legend>两个模式共用 · 每笔起点等待</legend>
+      <legend>三个模式共用 · 每笔起点等待</legend>
       <div class="wait-grid">
         <div class="field"><label for="penUpHoldCount">前面新增点数 · pen_down=false</label><input id="penUpHoldCount" type="number" value="150" min="0" step="1"></div>
         <div class="field"><label for="penDownHoldCount">后面新增点数 · pen_down=true</label><input id="penDownHoldCount" type="number" value="100" min="0" step="1"></div>
         <div class="field frequency-field"><label for="publishFrequency">发布频率（Hz）</label><input id="publishFrequency" type="number" value="50" min="0.001" step="any"></div>
         <output id="waitTimes" class="wait-times" aria-live="polite"></output>
       </div>
-      <p class="wait-note">等待时间 = 新增点数 ÷ 发布频率，按每个周期发布 1 个点估算。点数可设为 0；文字模式修改后重新生成，手写模式用于随后开始的新笔画。切换模式会保留各自轨迹。</p>
+      <p class="wait-note">等待时间 = 新增点数 ÷ 发布频率，按每个周期发布 1 个点估算。点数可设为 0；文字与黑体模式修改后重新生成，手写模式用于随后开始的新笔画。切换模式会保留各自轨迹。</p>
     </fieldset>
     <section id="mode-text" role="tabpanel" aria-labelledby="tab-text">
       <div class="layout">
@@ -197,6 +214,99 @@
       </section>
     </div>
     </section>
+    <section id="mode-heiti" role="tabpanel" aria-labelledby="tab-heiti" hidden>
+      <div class="layout">
+      <aside>
+        <fieldset class="heiti-font-panel">
+          <legend>黑体字库</legend>
+          <p class="hint">默认 Noto Sans CJK SC Regular 2.004（思源黑体同源设计）。首次加载约 16 MB，成功后尝试缓存。</p>
+          <button id="heiti-loadFont" type="button">加载黑体字库</button>
+          <div class="field heiti-import">
+            <label for="heiti-fontFile">或导入本地黑体字体（.otf / .ttf）</label>
+            <input id="heiti-fontFile" type="file" accept=".otf,.ttf">
+          </div>
+          <p id="heiti-fontStatus" class="hint" aria-live="polite">字库尚未加载</p>
+        </fieldset>
+        <div class="field">
+          <label for="heiti-detail">中线精度</label>
+          <select id="heiti-detail">
+            <option value="256">快速</option>
+            <option value="384" selected>标准（推荐）</option>
+            <option value="512">精细</option>
+          </select>
+        </div>
+        <label class="check"><input id="heiti-showReference" type="checkbox" checked>显示原黑体字形参考（仅预览）</label>
+
+        <div class="field">
+          <label for="heiti-text">黑体文字（常用汉字、中英文及数字，最多 10 个）</label>
+          <input id="heiti-text" type="text" value="方寸" maxlength="10" autocomplete="off">
+        </div>
+
+        <div class="numbers">
+          <div class="field">
+            <label for="heiti-size">字高 / m</label>
+            <input id="heiti-size" type="number" value="0.050" min="0.005" max="0.8" step="0.005">
+          </div>
+          <div class="field">
+            <label for="heiti-gap">字间距 / m</label>
+            <input id="heiti-gap" type="number" value="0.015" min="0" max="1.5" step="0.005">
+          </div>
+          <div class="field">
+            <label for="heiti-centerY">中心 y_C / m</label>
+            <input id="heiti-centerY" type="number" value="0.750" min="0" max="1.5" step="0.01">
+          </div>
+          <div class="field">
+            <label for="heiti-centerZ">中心 z_C / m</label>
+            <input id="heiti-centerZ" type="number" value="0.450" min="0" max="0.9" step="0.01">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="heiti-step">采样点最大间距 / m</label>
+          <input id="heiti-step" type="number" value="0.002" min="0.0002" max="0.1" step="0.0005">
+        </div>
+
+        <label class="check">
+          <input id="heiti-zoom" type="checkbox" checked>
+          放大显示轨迹（仅预览）
+        </label>
+        <label class="check">
+          <input id="heiti-showPoints" type="checkbox" checked>
+          显示采样点
+        </label>
+        <label class="check">
+          <input id="heiti-showMoves" type="checkbox">
+          显示抬笔移动
+        </label>
+
+        <div class="buttons">
+          <button id="heiti-generate" class="primary" type="button">生成黑体单线</button>
+          <button id="heiti-download" type="button" disabled>下载黑体 JSON</button>
+        </div>
+
+        <div id="heiti-status" class="status" aria-live="polite"></div>
+        <details class="notes"><summary>黑体中线与书写说明</summary><div class="note">
+      本模块从真实黑体字形提取单线骨架，导出中线轨迹，不描封闭外轮廓。
+      字库不含书写笔顺；中线在交叉处按方向连续性连接，路径采用就近排序，不保证传统汉字笔顺。
+      细小笔画和复杂交叉可能有提取误差，请在实际书写前预览。每条路径仍按共用设置插入抬笔、落笔等待点。
+      字库采用 <a href="https://github.com/notofonts/noto-cjk" target="_blank" rel="noopener noreferrer">Noto Sans CJK</a>，
+      <a href="https://raw.githubusercontent.com/notofonts/noto-cjk/Sans2.004/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf" target="_blank" rel="noopener noreferrer">下载字体</a>。
+      离线时可使用已缓存的字库，或导入本地字体。导出文件为 points_c_heiti.json。
+    </div></details>
+      </aside>
+
+      <section class="preview">
+        <div class="preview-head">
+          <strong>黑体单线预览</strong>
+          <div class="legend">
+            <span class="key"><span class="swatch"></span>固定线宽笔迹</span>
+            <span class="key"><span class="swatch move"></span>抬笔移动</span>
+          </div>
+        </div>
+        <canvas id="heiti-canvas"></canvas>
+      </section>
+    </div>
+    </section>
     <section id="mode-write" role="tabpanel" aria-labelledby="tab-write" hidden>
       <div class="frame">
       <aside>
@@ -246,6 +356,99 @@
     </div>
     </section>
     <p class="page-footer">坐标单位：米 · x_C 固定为 0 · 每笔先抬笔等待、同点落笔等待，再开始书写</p>
+    <details class="font-license"><summary>Noto 黑体字库来源与 OFL 许可证</summary><p>默认字体：Noto Sans CJK SC Regular 2.004，版权信息保留于原版字体文件。<a href="https://github.com/notofonts/noto-cjk" target="_blank" rel="noopener noreferrer">官方项目</a></p><pre>This Font Software is licensed under the SIL Open Font License,
+Version 1.1.
+
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font
+creation efforts of academic and linguistic communities, and to
+provide a free and open framework in which fonts may be shared and
+improved in partnership with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded,
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply to
+any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software
+components as distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to,
+deleting, or substituting -- in part or in whole -- any of the
+components of the Original Version, by changing formats or by porting
+the Font Software to a new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION &amp; CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed,
+modify, redistribute, and sell modified and unmodified copies of the
+Font Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components, in
+Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the
+corresponding Copyright Holder. This restriction only applies to the
+primary font name as presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created using
+the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.
+</pre></details>
   </main>
   <script>
   (() => {
@@ -253,6 +456,7 @@
     const tabs = [...document.querySelectorAll(".mode-tab")];
     const descriptions = {
       text: "输入中英文，按笔画顺序生成轨迹。",
+      heiti: "从真实黑体字库提取单线中线，生成适合执笔书写的轨迹。",
       write: "按住指针拖动自由书写；松开后可继续下一笔。"
     };
     function selectMode(mode) {
@@ -1423,5 +1627,1112 @@
     });
   })();
   </script>
+<!-- HEITI_CODE_BEGIN -->
+<script>
+/*
+ * Minimal SFNT Unicode coverage reader for static .otf/.ttf font imports.
+ * Reads cmap formats 4, 12 and 13; glyph zero always means missing.
+ * This checks character coverage, not outline validity or shaping support.
+ * Reference: https://learn.microsoft.com/en-us/typography/opentype/spec/cmap
+ */
+(function (root) {
+  "use strict";
+
+  function parse(buffer) {
+    if (Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]") {
+      throw new TypeError("Expected a font ArrayBuffer.");
+    }
+    var view = new DataView(buffer);
+    var size = view.byteLength;
+    function invalid(message) {
+      throw new Error("Invalid OpenType font: " + message);
+    }
+    function bounds(offset, length, limit) {
+      if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(length) ||
+          offset < 0 || length < 0 || offset > limit || length > limit - offset) {
+        invalid("table data is outside its bounds.");
+      }
+    }
+    function u16(offset) { return view.getUint16(offset, false); }
+    function u32(offset) { return view.getUint32(offset, false); }
+
+    bounds(0, 12, size);
+    var signature = u32(0);
+    if (signature !== 0x00010000 && signature !== 0x4F54544F && signature !== 0x74727565) {
+      throw new Error("Unsupported font container. Select a standalone .otf or .ttf file.");
+    }
+    var count = u16(4);
+    if (!count) invalid("empty table directory.");
+    var directoryEnd = 12 + count * 16;
+    bounds(12, count * 16, size);
+    var tables = Object.create(null);
+    for (var i = 0; i < count; i++) {
+      var record = 12 + i * 16;
+      var tag = String.fromCharCode(view.getUint8(record), view.getUint8(record + 1),
+        view.getUint8(record + 2), view.getUint8(record + 3));
+      var offset = u32(record + 8);
+      var length = u32(record + 12);
+      bounds(offset, length, size);
+      if (length && offset < directoryEnd) invalid("table overlaps the directory.");
+      if (tables[tag]) invalid("duplicate " + tag + " table.");
+      tables[tag] = { offset: offset, length: length };
+    }
+    if (!tables.cmap || !tables.maxp) invalid("missing cmap or maxp table.");
+    var maxp = tables.maxp;
+    if (maxp.length < 6) invalid("truncated maxp table.");
+    var maxpVersion = u32(maxp.offset);
+    if (maxpVersion !== 0x00005000 && maxpVersion !== 0x00010000) invalid("unsupported maxp version.");
+    var glyphCount = u16(maxp.offset + 4);
+    if (!glyphCount) invalid("font has no glyphs.");
+
+    var cmap = tables.cmap;
+    var cmapEnd = cmap.offset + cmap.length;
+    if (cmap.length < 4 || u16(cmap.offset) !== 0) invalid("bad cmap header.");
+    var encodingCount = u16(cmap.offset + 2);
+    bounds(cmap.offset + 4, encodingCount * 8, cmapEnd);
+    var subtableStart = cmap.offset + 4 + encodingCount * 8;
+    var candidates = [];
+    var parsed = Object.create(null);
+
+    function readFormat4(start) {
+      bounds(start, 14, cmapEnd);
+      var length = u16(start + 2);
+      bounds(start, length, cmapEnd);
+      var end = start + length;
+      var twiceSegments = u16(start + 6);
+      if (!twiceSegments || twiceSegments % 2) invalid("bad format 4 segment count.");
+      var segments = twiceSegments / 2;
+      bounds(start, 16 + segments * 8, end);
+      var endCodes = start + 14;
+      var startCodes = start + 16 + segments * 2;
+      var deltas = startCodes + segments * 2;
+      var rangeOffsets = deltas + segments * 2;
+      var glyphArray = rangeOffsets + segments * 2;
+      if (u16(endCodes + segments * 2) !== 0) invalid("bad format 4 reserved field.");
+      var mapping = new Uint16Array(65536);
+      var previousEnd = -1;
+      for (var j = 0; j < segments; j++) {
+        var first = u16(startCodes + j * 2);
+        var last = u16(endCodes + j * 2);
+        var delta = view.getInt16(deltas + j * 2, false);
+        var offsetAddress = rangeOffsets + j * 2;
+        var rangeOffset = u16(offsetAddress);
+        if (first > last || first <= previousEnd) invalid("overlapping or unsorted format 4 segments.");
+        previousEnd = last;
+        var glyphStart = offsetAddress + rangeOffset;
+        if (rangeOffset) {
+          if (rangeOffset % 2 || glyphStart < glyphArray) invalid("bad format 4 glyph offset.");
+          bounds(glyphStart, (last - first + 1) * 2, end);
+        }
+        for (var code = first; code <= last; code++) {
+          var glyph = rangeOffset ? u16(glyphStart + (code - first) * 2) : code;
+          if (!rangeOffset || glyph) glyph = (glyph + delta) & 0xFFFF;
+          if (glyph >= glyphCount) invalid("format 4 glyph index exceeds maxp glyph count.");
+          mapping[code] = glyph;
+        }
+      }
+      if (u16(startCodes + (segments - 1) * 2) !== 0xFFFF || previousEnd !== 0xFFFF) {
+        invalid("missing format 4 sentinel.");
+      }
+      return function (code) { return code <= 0xFFFF && mapping[code] !== 0; };
+    }
+
+    function readGroups(start, format) {
+      bounds(start, 16, cmapEnd);
+      if (u16(start + 2) !== 0) invalid("bad format " + format + " reserved field.");
+      var length = u32(start + 4);
+      bounds(start, length, cmapEnd);
+      var end = start + length;
+      bounds(start, 16, end);
+      var groups = u32(start + 12);
+      bounds(start + 16, groups * 12, end);
+      var previousEnd = -1;
+      for (var j = 0; j < groups; j++) {
+        var group = start + 16 + j * 12;
+        var first = u32(group);
+        var last = u32(group + 4);
+        var glyph = u32(group + 8);
+        if (first > last || last > 0x10FFFF || first <= previousEnd) {
+          invalid("overlapping or invalid format " + format + " character groups.");
+        }
+        if (glyph + (format === 12 ? last - first : 0) >= glyphCount) {
+          invalid("format " + format + " glyph index exceeds maxp glyph count.");
+        }
+        previousEnd = last;
+      }
+      return function (code) {
+        var low = 0;
+        var high = groups - 1;
+        while (low <= high) {
+          var middle = Math.floor((low + high) / 2);
+          var group = start + 16 + middle * 12;
+          var first = u32(group);
+          var last = u32(group + 4);
+          if (code < first) high = middle - 1;
+          else if (code > last) low = middle + 1;
+          else return u32(group + 8) + (format === 12 ? code - first : 0) !== 0;
+        }
+        return false;
+      };
+    }
+
+    for (var encoding = 0; encoding < encodingCount; encoding++) {
+      var encodingRecord = cmap.offset + 4 + encoding * 8;
+      var platform = u16(encodingRecord);
+      var encodingId = u16(encodingRecord + 2);
+      var start = cmap.offset + u32(encodingRecord + 4);
+      bounds(start, 2, cmapEnd);
+      if (start < subtableStart) invalid("cmap subtable overlaps encoding records.");
+      var unicode = platform === 0 && encodingId <= 6 && encodingId !== 5;
+      unicode = unicode || (platform === 3 && (encodingId === 1 || encodingId === 10));
+      if (!unicode) continue;
+      var format = u16(start);
+      if (format !== 4 && format !== 12 && format !== 13) continue;
+      var key = String(start);
+      if (!parsed[key]) parsed[key] = format === 4 ? readFormat4(start) : readGroups(start, format);
+      // Use one Unicode subtable, as specified by OpenType. Prefer full Unicode
+      // format 12, then normal BMP format 4, then last-resort format 13.
+      var priority = (format === 12 ? 300 : format === 4 ? 200 : 100) + (platform === 0 ? 10 : 0);
+      candidates.push({ priority: priority, contains: parsed[key] });
+    }
+    if (!candidates.length) {
+      throw new Error("Unsupported font: no Unicode cmap format 4, 12 or 13.");
+    }
+    candidates.sort(function (a, b) { return b.priority - a.priority; });
+    var contains = candidates[0].contains;
+    return Object.freeze({
+      hasGlyph: function (codePoint) {
+        return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10FFFF &&
+          !(codePoint >= 0xD800 && codePoint <= 0xDFFF) && contains(codePoint);
+      }
+    });
+  }
+
+  var api = Object.freeze({ parse: parse });
+  if (typeof module === "object" && module.exports) module.exports = api;
+  root.HeitiFontCoverage = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+</script>
+<script>
+/*
+ * Raster glyphs -> single-line paths. No DOM or third-party dependencies.
+ * The resulting paths follow the visible glyph skeleton; a font does not encode
+ * handwriting stroke order, so this does not recover traditional stroke order.
+ * All coordinates are pixel coordinates in the input raster.
+ */
+(function (root) {
+  "use strict";
+
+  const DX = [0, 1, 1, 1, 0, -1, -1, -1];
+  const DY = [-1, -1, 0, 1, 1, 1, 0, -1];
+  const SQRT2 = Math.SQRT2;
+
+  function checkedMask(mask, width, height) {
+    if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) ||
+        width < 1 || height < 1 || !Number.isSafeInteger(width * height)) {
+      throw new TypeError("Raster width and height must be positive integers.");
+    }
+    if (!mask || typeof mask.length !== "number" || mask.length !== width * height) {
+      throw new TypeError("Raster mask length must equal width × height.");
+    }
+    const binary = new Uint8Array(mask.length);
+    for (let i = 0; i < mask.length; i++) binary[i] = mask[i] ? 1 : 0;
+    return binary;
+  }
+
+  function nonnegativeOption(value, fallback, name) {
+    if (value === undefined) return fallback;
+    if (!Number.isFinite(value) || value < 0) {
+      throw new TypeError(name + " must be a finite nonnegative number.");
+    }
+    return value;
+  }
+
+  function thin(mask, width, height) {
+    const input = checkedMask(mask, width, height);
+    // A zero border allows glyphs touching any input edge to be thinned too.
+    const stride = width + 2;
+    const data = new Uint8Array(stride * (height + 2));
+    for (let y = 0; y < height; y++) {
+      data.set(input.subarray(y * width, (y + 1) * width), (y + 1) * stride + 1);
+    }
+    const remove = [];
+    let changed;
+    do {
+      changed = false;
+      for (let pass = 0; pass < 2; pass++) {
+        remove.length = 0;
+        for (let y = 1; y <= height; y++) {
+          for (let x = 1; x <= width; x++) {
+            const i = y * stride + x;
+            if (!data[i]) continue;
+            const n = data[i - stride], ne = data[i - stride + 1];
+            const e = data[i + 1], se = data[i + stride + 1];
+            const s = data[i + stride], sw = data[i + stride - 1];
+            const w = data[i - 1], nw = data[i - stride - 1];
+            const count = n + ne + e + se + s + sw + w + nw;
+            // Zhang–Suen's two alternating deletion passes retain endpoints
+            // (one neighbour) and connected components while thinning strokes.
+            if (count < 2 || count > 6) continue;
+            const transitions = (!n && ne) + (!ne && e) + (!e && se) +
+              (!se && s) + (!s && sw) + (!sw && w) + (!w && nw) + (!nw && n);
+            if (transitions !== 1) continue;
+            if (pass === 0 ? (n * e * s || e * s * w) : (n * e * w || n * s * w)) continue;
+            remove.push(i);
+          }
+        }
+        if (remove.length) changed = true;
+        for (const i of remove) data[i] = 0;
+      }
+    } while (changed);
+    const result = new Uint8Array(input.length);
+    for (let y = 0; y < height; y++) {
+      result.set(data.subarray((y + 1) * stride + 1, (y + 1) * stride + width + 1), y * width);
+    }
+    // Parallel deletion can completely consume a very small filled component
+    // (notably a 2 × 2 dot). Keep its nearest-to-centroid pixel as a pen dot.
+    const seen = new Uint8Array(input.length);
+    for (let start = 0; start < input.length; start++) {
+      if (!input[start] || seen[start]) continue;
+      const component = [start];
+      seen[start] = 1;
+      let surviving = false, sumX = 0, sumY = 0;
+      for (let cursor = 0; cursor < component.length; cursor++) {
+        const i = component[cursor], x = i % width, y = Math.floor(i / width);
+        surviving = surviving || !!result[i];
+        sumX += x;
+        sumY += y;
+        for (let d = 0; d < 8; d++) {
+          const nx = x + DX[d], ny = y + DY[d], next = ny * width + nx;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height || !input[next] || seen[next]) continue;
+          seen[next] = 1;
+          component.push(next);
+        }
+      }
+      if (!surviving) {
+        const cx = sumX / component.length, cy = sumY / component.length;
+        let closest = start, distance = Infinity;
+        for (const i of component) {
+          const d = (i % width - cx) ** 2 + (Math.floor(i / width) - cy) ** 2;
+          if (d < distance) { distance = d; closest = i; }
+        }
+        result[closest] = 1;
+      }
+    }
+    return result;
+  }
+
+  function makeGraph(mask, width, height) {
+    const links = new Uint8Array(mask.length);
+    const degrees = new Uint8Array(mask.length);
+    for (let i = 0; i < mask.length; i++) {
+      if (!mask[i]) continue;
+      const x = i % width, y = Math.floor(i / width);
+      for (let d = 0; d < 8; d++) {
+        const nx = x + DX[d], ny = y + DY[d];
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height || !mask[ny * width + nx]) continue;
+        // An L-shaped chain already joins these diagonal pixels via an
+        // orthogonal pixel. A diagonal edge would create a false triangle.
+        if ((d & 1) && (mask[y * width + nx] || mask[ny * width + x])) continue;
+        links[i] |= 1 << d;
+        degrees[i]++;
+      }
+    }
+    return { links: links, degrees: degrees };
+  }
+
+  function pruneTerminalSpurs(mask, width, height, maxLength) {
+    if (maxLength === 0) return;
+    const graph = makeGraph(mask, width, height);
+    const remove = new Set();
+    // One conservative pass: only a short endpoint-to-junction branch is
+    // removed. Short standalone strokes and every loop are retained.
+    for (let start = 0; start < mask.length; start++) {
+      if (graph.degrees[start] !== 1) continue;
+      let previous = -1, current = start, length = 0;
+      const branch = [start];
+      while (length <= maxLength) {
+        let next = -1, direction = -1;
+        for (let d = 0; d < 8; d++) {
+          if (!(graph.links[current] & (1 << d))) continue;
+          const candidate = current + DY[d] * width + DX[d];
+          if (candidate !== previous) { next = candidate; direction = d; break; }
+        }
+        if (next < 0) break;
+        length += (direction & 1) ? SQRT2 : 1;
+        if (length > maxLength) break;
+        if (graph.degrees[next] >= 3) {
+          for (const i of branch) remove.add(i);
+          break;
+        }
+        if (graph.degrees[next] !== 2) break;
+        branch.push(next);
+        previous = current;
+        current = next;
+      }
+    }
+    for (const i of remove) mask[i] = 0;
+  }
+
+  function traceChecked(mask, width, height) {
+    const graph = makeGraph(mask, width, height);
+    const visited = new Uint8Array(mask.length);
+    const paths = [];
+    const point = function (i) { return [i % width, Math.floor(i / width)]; };
+    function walk(start, firstDirection) {
+      const path = [point(start)];
+      let current = start, direction = firstDirection;
+      while (direction >= 0) {
+        const next = current + DY[direction] * width + DX[direction];
+        visited[current] |= 1 << direction;
+        visited[next] |= 1 << ((direction + 4) & 7);
+        path.push(point(next));
+        if (graph.degrees[next] !== 2 || next === start) break;
+        current = next;
+        direction = -1;
+        for (let d = 0; d < 8; d++) {
+          if ((graph.links[current] & (1 << d)) && !(visited[current] & (1 << d))) {
+            direction = d;
+            break;
+          }
+        }
+      }
+      paths.push(path);
+    }
+    // Begin with endpoints, then junctions. Stop at each junction so no
+    // skeleton edge is traversed twice just to reach a different branch.
+    for (const endpointPass of [true, false]) {
+      for (let i = 0; i < mask.length; i++) {
+        if (!mask[i]) continue;
+        const degree = graph.degrees[i];
+        if (endpointPass ? degree !== 1 : degree < 3) continue;
+        for (let d = 0; d < 8; d++) {
+          if ((graph.links[i] & (1 << d)) && !(visited[i] & (1 << d))) walk(i, d);
+        }
+      }
+    }
+    for (let i = 0; i < mask.length; i++) {
+      if (!mask[i]) continue;
+      if (graph.degrees[i] === 0) { paths.push([point(i)]); continue; }
+      // Remaining edges belong to closed cycles; retain their closing point.
+      for (let d = 0; d < 8; d++) {
+        if ((graph.links[i] & (1 << d)) && !(visited[i] & (1 << d))) walk(i, d);
+      }
+    }
+    return paths;
+  }
+
+  function trace(mask, width, height) {
+    return traceChecked(checkedMask(mask, width, height), width, height);
+  }
+
+  function segmentDistanceSquared(point, a, b) {
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const denominator = dx * dx + dy * dy;
+    const t = denominator ? Math.max(0, Math.min(1,
+      ((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / denominator)) : 0;
+    const ex = point[0] - a[0] - t * dx, ey = point[1] - a[1] - t * dy;
+    return ex * ex + ey * ey;
+  }
+
+  function joinAtJunctions(paths) {
+    const vertices = new Map();
+    const paired = new Int32Array(paths.length * 2);
+    paired.fill(-1);
+    const closed = new Uint8Array(paths.length);
+    function outgoingTangent(path, side) {
+      const first = side ? path.length - 1 : 0;
+      const step = side ? -1 : 1;
+      let previous = path[first], point = previous, length = 0;
+      // Looking a few pixels into a branch avoids pairing according to the
+      // stair-step direction of its first raster edge alone.
+      for (let i = first + step; i >= 0 && i < path.length; i += step) {
+        point = path[i];
+        length += Math.hypot(point[0] - previous[0], point[1] - previous[1]);
+        if (length >= 5) break;
+        previous = point;
+      }
+      const dx = point[0] - path[first][0], dy = point[1] - path[first][1];
+      const norm = Math.hypot(dx, dy);
+      return norm ? [dx / norm, dy / norm] : null;
+    }
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i];
+      if (path.length < 2) continue;
+      const a = path[0], b = path[path.length - 1];
+      if (a[0] === b[0] && a[1] === b[1]) {
+        // A self-closing branch is already a complete loop. Do not route a
+        // different stroke through it merely because it meets a junction.
+        closed[i] = 1;
+        continue;
+      }
+      for (let side = 0; side < 2; side++) {
+        const point = side ? b : a;
+        const tangent = outgoingTangent(path, side);
+        if (!tangent) continue;
+        const key = point[0] + "," + point[1];
+        if (!vertices.has(key)) vertices.set(key, []);
+        vertices.get(key).push({ endpoint: i * 2 + side, tangent: tangent });
+      }
+    }
+    for (const endpoints of vertices.values()) {
+      const remaining = endpoints.slice();
+      while (remaining.length >= 2) {
+        let bestDot = -Math.SQRT1_2, bestA = -1, bestB = -1;
+        for (let a = 0; a < remaining.length - 1; a++) {
+          for (let b = a + 1; b < remaining.length; b++) {
+            const u = remaining[a].tangent, v = remaining[b].tangent;
+            const dot = u[0] * v[0] + u[1] * v[1];
+            // Pair the most nearly opposite outgoing directions, allowing
+            // at most 45 degrees away from a straight continuation.
+            if (dot <= bestDot) { bestDot = dot; bestA = a; bestB = b; }
+          }
+        }
+        if (bestA < 0) break;
+        const a = remaining[bestA].endpoint, b = remaining[bestB].endpoint;
+        paired[a] = b;
+        paired[b] = a;
+        remaining.splice(bestB, 1);
+        remaining.splice(bestA, 1);
+      }
+    }
+    const used = new Uint8Array(paths.length), joined = [];
+    function follow(start) {
+      let entry = start;
+      const result = [];
+      while (entry >= 0) {
+        const index = Math.floor(entry / 2), side = entry & 1;
+        if (used[index]) break;
+        used[index] = 1;
+        const path = paths[index];
+        if (side) {
+          for (let i = path.length - 1; i >= 0; i--) {
+            if (i === path.length - 1 && result.length) continue;
+            result.push(path[i]);
+          }
+        } else {
+          for (let i = 0; i < path.length; i++) {
+            if (i === 0 && result.length) continue;
+            result.push(path[i]);
+          }
+        }
+        entry = paired[index * 2 + (1 - side)];
+      }
+      joined.push(result);
+    }
+    // Start open trails at a free end; fully paired components are cycles and
+    // are visited in the second pass. Every source path remains used once.
+    for (let i = 0; i < paths.length; i++) {
+      if (used[i]) continue;
+      if (closed[i] || paths[i].length < 2) { used[i] = 1; joined.push(paths[i]); continue; }
+      if (paired[i * 2] < 0) follow(i * 2);
+      else if (paired[i * 2 + 1] < 0) follow(i * 2 + 1);
+    }
+    for (let i = 0; i < paths.length; i++) if (!used[i]) follow(i * 2);
+    return joined;
+  }
+
+  function simplifyOpen(points, tolerance) {
+    if (points.length <= 2 || tolerance === 0) return points;
+    const keep = new Uint8Array(points.length);
+    keep[0] = keep[points.length - 1] = 1;
+    const stack = [[0, points.length - 1]], threshold = tolerance * tolerance;
+    while (stack.length) {
+      const range = stack.pop(), first = range[0], last = range[1];
+      let greatest = threshold, split = -1;
+      for (let i = first + 1; i < last; i++) {
+        const distance = segmentDistanceSquared(points[i], points[first], points[last]);
+        if (distance > greatest) { greatest = distance; split = i; }
+      }
+      if (split !== -1) {
+        keep[split] = 1;
+        if (split - first > 1) stack.push([first, split]);
+        if (last - split > 1) stack.push([split, last]);
+      }
+    }
+    return points.filter(function (_, i) { return keep[i]; });
+  }
+
+  function simplify(points, tolerance) {
+    if (points.length < 4) return simplifyOpen(points, tolerance);
+    const a = points[0], b = points[points.length - 1];
+    if (a[0] !== b[0] || a[1] !== b[1]) return simplifyOpen(points, tolerance);
+    // Split a closed cycle into two open arcs. Simplifying a zero-length
+    // start/end segment directly can erase the entire loop at large tolerance.
+    let split = 1, distance = -1;
+    for (let i = 1; i < points.length - 1; i++) {
+      const d = (points[i][0] - a[0]) ** 2 + (points[i][1] - a[1]) ** 2;
+      if (d > distance) { distance = d; split = i; }
+    }
+    const first = simplifyOpen(points.slice(0, split + 1), tolerance);
+    const second = simplifyOpen(points.slice(split), tolerance);
+    const result = first.concat(second.slice(1));
+    return result.length >= 4 ? result : points;
+  }
+
+  function orderPaths(paths) {
+    if (paths.length < 2) return paths;
+    const pending = paths.slice(), ordered = [pending.shift()];
+    while (pending.length) {
+      const current = ordered[ordered.length - 1];
+      const end = current[current.length - 1];
+      let bestIndex = 0, bestDistance = Infinity, reverse = false;
+      for (let i = 0; i < pending.length; i++) {
+        const path = pending[i];
+        for (let side = 0; side < 2; side++) {
+          const p = path[side ? path.length - 1 : 0];
+          const distance = (end[0] - p[0]) ** 2 + (end[1] - p[1]) ** 2;
+          if (distance < bestDistance) { bestDistance = distance; bestIndex = i; reverse = !!side; }
+        }
+      }
+      const path = pending.splice(bestIndex, 1)[0];
+      if (reverse) path.reverse();
+      ordered.push(path);
+    }
+    return ordered;
+  }
+
+  function extract(mask, width, height, options) {
+    options = options || {};
+    const minBranchLength = nonnegativeOption(options.minBranchLength, 2, "minBranchLength");
+    const simplifyTolerance = nonnegativeOption(options.simplifyTolerance, 0.65, "simplifyTolerance");
+    const joinJunctions = options.joinJunctions === undefined ? true : options.joinJunctions;
+    if (typeof joinJunctions !== "boolean") throw new TypeError("joinJunctions must be a boolean.");
+    const skeleton = thin(mask, width, height);
+    pruneTerminalSpurs(skeleton, width, height, minBranchLength);
+    let paths = traceChecked(skeleton, width, height);
+    if (joinJunctions) paths = joinAtJunctions(paths);
+    return orderPaths(paths.map(function (path) {
+      return simplify(path, simplifyTolerance);
+    }));
+  }
+
+  const api = Object.freeze({ thin: thin, trace: trace, extract: extract });
+  root.HeitiSkeleton = api;
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+</script>
+<script>
+/* Black-font rasterization and single-line extraction; embedded in create_hanzi.html. */
+(() => {
+  "use strict";
+  const BOARD_Y = 1.5, BOARD_Z = 0.9;
+  const FONT_KEY = "noto-sans-cjk-sc-regular-2.004";
+  const FONT_URLS = [
+    "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@Sans2.004/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf",
+    "https://raw.githubusercontent.com/notofonts/noto-cjk/Sans2.004/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf"
+  ];
+  const el = Object.fromEntries([
+    "text", "size", "gap", "centerY", "centerZ", "step", "detail", "zoom",
+    "showPoints", "showMoves", "showReference", "generate", "download", "status",
+    "canvas", "loadFont", "fontFile", "fontStatus"
+  ].map((name) => [name, document.getElementById("heiti-" + name)]));
+  for (const name of ["penUpHoldCount", "penDownHoldCount", "publishFrequency", "waitTimes"]) {
+    el[name] = document.getElementById(name);
+  }
+  const state = {
+    points: [], bounds: null, pending: false, font: null, cache: new Map(),
+    settings: null, glyphs: [], fontSequence: 0
+  };
+
+  // Shared trajectory sampling and preview routines are inserted here by the page assembler.
+    function readNumber(input, name, minimum, maximum) {
+      const result = Number(input.value);
+      if (!Number.isFinite(result) || result < minimum || result > maximum) {
+        throw new Error(name + "应在 " + minimum + " ~ " + maximum + " 之间");
+      }
+      return result;
+    }
+
+    function readHoldSettings() {
+      const readCount = (input, name) => {
+        const count = Number(input.value);
+        if (!input.value.trim() || !Number.isSafeInteger(count) || count < 0) {
+          throw new Error(name + "必须是大于等于 0 的整数");
+        }
+        return count;
+      };
+      const upHoldCount = readCount(el.penUpHoldCount, "前面新增点数");
+      const downHoldCount = readCount(el.penDownHoldCount, "后面新增点数");
+      const publishFrequency = Number(el.publishFrequency.value);
+      if (!Number.isFinite(publishFrequency) || publishFrequency <= 0) {
+        throw new Error("发布频率必须大于 0 Hz");
+      }
+      return { upHoldCount, downHoldCount, publishFrequency };
+    }
+
+    function updateWaitTimes() {
+      try {
+        const hold = readHoldSettings();
+        const before = hold.upHoldCount / hold.publishFrequency;
+        const after = hold.downHoldCount / hold.publishFrequency;
+        el.waitTimes.textContent =
+          "前面抬笔等待：" + before.toFixed(3) + " s\n" +
+          "后面落笔等待：" + after.toFixed(3) + " s\n" +
+          "每笔新增等待合计：" + (before + after).toFixed(3) + " s";
+        el.waitTimes.classList.toggle("error", false);
+      } catch (error) {
+        el.waitTimes.textContent = error.message;
+        el.waitTimes.classList.toggle("error", true);
+      }
+    }
+
+    function readSettings() {
+      const characters = [...el.text.value.replace(/\s/g, "")];
+      if (!characters.length) throw new Error("请至少输入一个中文或英文字母");
+      if (characters.length > 10) throw new Error("一次最多生成 10 个字符");
+
+      return {
+        characters,
+        size: readNumber(el.size, "字高", 0.005, 0.8),
+        gap: readNumber(el.gap, "字间距", 0, BOARD_Y),
+        centerY: readNumber(el.centerY, "中心 y_C", 0, BOARD_Y),
+        centerZ: readNumber(el.centerZ, "中心 z_C", 0, BOARD_Z),
+        step: readNumber(el.step, "采样间距", 0.0002, 0.1),
+        hold: readHoldSettings()
+      };
+    }
+
+    function addPoint(points, y, z, penDown, label) {
+      if (points.length >= 250000) throw new Error("轨迹点数过多，请减少等待点数或增大采样间距。");
+      points.push({
+        x: 0,
+        y: Number(y.toFixed(6)),
+        z: Number(z.toFixed(6)),
+        pen_down: penDown,
+        label
+      });
+    }
+
+    function sampleSegment(points, start, end, step, penDown, label) {
+      const distance = Math.hypot(end.y - start.y, end.z - start.z);
+      const count = Math.max(1, Math.ceil(distance / step));
+      for (let index = 1; index <= count; index += 1) {
+        const ratio = index / count;
+        addPoint(
+          points,
+          start.y + (end.y - start.y) * ratio,
+          start.z + (end.z - start.z) * ratio,
+          penDown,
+          label
+        );
+      }
+    }
+
+    function mapStroke(rawStroke, centerY, centerZ, size) {
+      return rawStroke.map(([rawY, rawZ]) => ({
+        y: centerY - rawY * size,
+        z: centerZ + rawZ * size
+      }));
+    }
+
+    function calculateBounds(points) {
+      const box = { minY: Infinity, maxY: -Infinity, minZ: Infinity, maxZ: -Infinity };
+      for (const point of points) {
+        box.minY = Math.min(box.minY, point.y); box.maxY = Math.max(box.maxY, point.y);
+        box.minZ = Math.min(box.minZ, point.z); box.maxZ = Math.max(box.maxZ, point.z);
+      }
+      return box;
+    }
+
+    function makeTrajectory(settings, glyphs) {
+      const points = [];
+      const count = settings.characters.length;
+
+      settings.characters.forEach((character, characterIndex) => {
+        const characterCenterY =
+          settings.centerY + (0.5 * (count - 1) - characterIndex) * (settings.size + settings.gap);
+
+        glyphs[characterIndex].forEach((rawStroke, strokeIndex) => {
+          const stroke = mapStroke(rawStroke, characterCenterY, settings.centerZ, settings.size);
+          const label = "char" + (characterIndex + 1) + "_stroke" + (strokeIndex + 1);
+
+          if (!points.length) {
+            addPoint(points, stroke[0].y, stroke[0].z, false, label + "_start");
+          } else {
+            const previousEnd = points[points.length - 1];
+            sampleSegment(
+              points,
+              previousEnd,
+              stroke[0],
+              settings.step,
+              false,
+              label + "_move"
+            );
+            points[points.length - 1].label = label + "_start";
+          }
+
+          // 在每笔起点按设置追加同坐标的抬笔、落笔等待点。
+          for (let hold = 0; hold < settings.hold.upHoldCount; hold += 1) {
+            if (points.length >= 250000) throw new Error("轨迹点数过多，请减少等待点数。");
+            points.push({ ...points[points.length - 1] });
+          }
+          addPoint(points, stroke[0].y, stroke[0].z, true, label + "_down");
+          for (let hold = 0; hold < settings.hold.downHoldCount; hold += 1) {
+            if (points.length >= 250000) throw new Error("轨迹点数过多，请减少等待点数。");
+            points.push({ ...points[points.length - 1] });
+          }
+
+          for (let index = 1; index < stroke.length; index += 1) {
+            sampleSegment(
+              points,
+              stroke[index - 1],
+              stroke[index],
+              settings.step,
+              true,
+              label
+            );
+          }
+          const end = stroke[stroke.length - 1];
+          addPoint(points, end.y, end.z, false, label + "_up");
+        });
+      });
+
+      if (points.length) {
+        const finalPoint = points[points.length - 1];
+        finalPoint.pen_down = true;
+        finalPoint.label = finalPoint.label.replace(/_up$/, "_end");
+        points.push({
+          ...finalPoint,
+          pen_down: false,
+          label: finalPoint.label.replace(/_end$/, "_final_up")
+        });
+      }
+
+      const outside = points.find((point) =>
+        point.y < 0 || point.y > BOARD_Y || point.z < 0 || point.z > BOARD_Z
+      );
+      if (outside) {
+        throw new Error(
+          "轨迹超出黑板：y_C=" + outside.y.toFixed(3) +
+          "，z_C=" + outside.z.toFixed(3) + " m"
+        );
+      }
+      return points;
+    }
+
+    function canvasScene() {
+      const rect = el.canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const pixelWidth = Math.max(1, Math.round(rect.width * ratio));
+      const pixelHeight = Math.max(1, Math.round(rect.height * ratio));
+      if (el.canvas.width !== pixelWidth || el.canvas.height !== pixelHeight) {
+        el.canvas.width = pixelWidth;
+        el.canvas.height = pixelHeight;
+      }
+      const context = el.canvas.getContext("2d");
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return { context, width: rect.width, height: rect.height };
+    }
+
+    function draw() {
+      if (document.getElementById("mode-heiti").hidden) return;
+      const { context, width, height } = canvasScene();
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = "#173f32";
+      context.fillRect(0, 0, width, height);
+
+      let range = { minY: 0, maxY: BOARD_Y, minZ: 0, maxZ: BOARD_Z };
+      if (el.zoom.checked && state.bounds) {
+        const marginY = Math.max(0.012, (state.bounds.maxY - state.bounds.minY) * 0.18);
+        const marginZ = Math.max(0.012, (state.bounds.maxZ - state.bounds.minZ) * 0.18);
+        range = {
+          minY: state.bounds.minY - marginY,
+          maxY: state.bounds.maxY + marginY,
+          minZ: state.bounds.minZ - marginZ,
+          maxZ: state.bounds.maxZ + marginZ
+        };
+      }
+
+      const padding = 38;
+      const scale = Math.min(
+        (width - padding * 2) / Math.max(range.maxY - range.minY, 1e-9),
+        (height - padding * 2) / Math.max(range.maxZ - range.minZ, 1e-9)
+      );
+      const drawingWidth = (range.maxY - range.minY) * scale;
+      const drawingHeight = (range.maxZ - range.minZ) * scale;
+      const left = (width - drawingWidth) / 2;
+      const top = (height - drawingHeight) / 2;
+      const pixel = (point) => ({
+        x: left + (range.maxY - point.y) * scale,
+        y: top + (range.maxZ - point.z) * scale
+      });
+
+      if (!el.zoom.checked) {
+        context.strokeStyle = "rgba(255,255,255,0.28)";
+        context.lineWidth = 1;
+        context.strokeRect(left, top, drawingWidth, drawingHeight);
+        context.fillStyle = "rgba(255,255,255,0.62)";
+        context.font = "12px Segoe UI, sans-serif";
+        context.fillText("1.50 m × 0.90 m", left + 10, top + 20);
+        context.fillText("O_C", left + drawingWidth - 28, top + drawingHeight - 10);
+      }
+
+      // 每段落笔线都使用同一个宽度；不读取压力，也不做起收笔渐变。
+      drawReference(context, pixel, scale);
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      for (let index = 1; index < state.points.length; index += 1) {
+        const previous = pixel(state.points[index - 1]);
+        const current = pixel(state.points[index]);
+        const penDown = state.points[index].pen_down;
+        if (!penDown && !el.showMoves.checked) continue;
+
+        context.beginPath();
+        context.moveTo(previous.x, previous.y);
+        context.lineTo(current.x, current.y);
+        context.strokeStyle = penDown ? "#f5efe2" : "#f1a95b";
+        context.lineWidth = penDown ? 3 : 1.5;
+        context.setLineDash(penDown ? [] : [6, 5]);
+        context.stroke();
+      }
+      context.setLineDash([]);
+
+      if (el.showPoints.checked) {
+        const pointRadius = state.points.length > 500 ? 1 : 1.6;
+        state.points.forEach((point) => {
+          if (!point.pen_down) return;
+          const p = pixel(point);
+          context.beginPath();
+          context.arc(p.x, p.y, pointRadius, 0, Math.PI * 2);
+          context.fillStyle = "#d9513b";
+          context.fill();
+        });
+      }
+    }
+
+    function setStatus(message, error = false) {
+      el.status.textContent = message;
+      el.status.classList.toggle("error", error);
+    }
+
+
+
+  function readConfig() {
+    const cfg = readSettings();
+    if (!cfg.characters.every((character) => /^[\u3400-\u9fffA-Za-z0-9]$/u.test(character))) {
+      throw new Error("黑体模块支持常用汉字、中英文与数字；请移除空白以外的其他符号。");
+    }
+    const resolution = Number(el.detail.value);
+    if (![256, 384, 512].includes(resolution)) throw new Error("请选择有效的中线精度。");
+    return { ...cfg, resolution };
+  }
+
+  async function fontDatabase() {
+    if (!globalThis.indexedDB) return null;
+    try {
+      return await new Promise((resolve, reject) => {
+        const request = indexedDB.open("hanzi-heiti-fonts", 1);
+        request.onupgradeneeded = () => request.result.createObjectStore("fonts");
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+        request.onblocked = () => reject(new Error("字体缓存不可用"));
+      });
+    } catch (_) { return null; }
+  }
+
+  async function cachedFont(buffer) {
+    const db = await fontDatabase();
+    if (!db) return null;
+    try {
+      return await new Promise((resolve, reject) => {
+        const transaction = db.transaction("fonts", buffer ? "readwrite" : "readonly");
+        const fonts = transaction.objectStore("fonts");
+        const request = buffer ? fonts.put(buffer, FONT_KEY) : fonts.get(FONT_KEY);
+        let result;
+        request.onsuccess = () => { result = request.result; };
+        transaction.oncomplete = () => resolve(buffer ? true : result || null);
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error);
+      });
+    } catch (_) { return null; }
+    finally { db.close(); }
+  }
+
+  async function installFont(buffer, label) {
+    const coverage = HeitiFontCoverage.parse(buffer);
+    const family = "HanziHeitiRuntime" + (++state.fontSequence);
+    const face = new FontFace(family, buffer, { style: "normal", weight: "400" });
+    await face.load();
+    document.fonts.add(face);
+    const previous = state.font;
+    state.font = { family, face, coverage, label };
+    state.cache.clear();
+    if (previous) document.fonts.delete(previous.face);
+    el.fontStatus.textContent = label;
+    el.fontStatus.classList.remove("error");
+    return state.font;
+  }
+
+  async function ensureFont() {
+    if (state.font) return state.font;
+    if (typeof FontFace !== "function" || !document.fonts) {
+      throw new Error("当前浏览器不支持字体加载，请使用较新的 Chrome、Edge、Firefox 或 Safari。");
+    }
+    el.fontStatus.textContent = "正在读取黑体字库缓存…";
+    const cached = await cachedFont();
+    if (cached) {
+      try { return await installFont(cached, "Noto Sans CJK SC Regular 2.004 · 已从缓存加载"); }
+      catch (_) { /* A corrupt cache must not prevent a fresh font download. */ }
+    }
+    const localUrl = new URL("assets/fonts/NotoSansCJKsc-Regular.otf", document.baseURI);
+    const urls = location.protocol === "file:" ? FONT_URLS : [localUrl.href, ...FONT_URLS];
+    for (const url of urls) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 45000);
+      try {
+        el.fontStatus.textContent = "正在加载 Noto 黑体（约 16 MB），首次下载请稍候…";
+        const response = await fetch(url, { signal: controller.signal, cache: "force-cache" });
+        if (!response.ok) throw new Error("字体下载 HTTP " + response.status);
+        const buffer = await response.arrayBuffer();
+        const font = await installFont(buffer, "Noto Sans CJK SC Regular 2.004 · 已加载");
+        const saved = await cachedFont(buffer);
+        if (saved) el.fontStatus.textContent += "，已缓存";
+        return font;
+      } catch (_) { /* Try the pinned official-source fallback. */ }
+      finally { clearTimeout(timeout); }
+    }
+    throw new Error("黑体字库加载失败。请检查网络，或下载 Noto 字库后用下方按钮导入 .otf/.ttf 文件。");
+  }
+
+  function rasterGlyph(character, resolution) {
+    const key = state.font.family + ":" + resolution + ":" + character;
+    if (state.cache.has(key)) return state.cache.get(key);
+    if (!state.font.coverage.hasGlyph(character.codePointAt(0))) {
+      throw new Error("当前字库没有“" + character + "”的字形，请更换字库或文字。");
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = resolution;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    const fontSize = resolution * 2 / 3;
+    context.font = fontSize + 'px "' + state.font.family + '"';
+    context.textBaseline = "alphabetic";
+    context.textAlign = "left";
+    const metrics = context.measureText(character);
+    const left = metrics.actualBoundingBoxLeft, right = metrics.actualBoundingBoxRight;
+    const ascent = metrics.actualBoundingBoxAscent, descent = metrics.actualBoundingBoxDescent;
+    if (![left, right, ascent, descent].every(Number.isFinite)) {
+      throw new Error("当前浏览器无法读取字形边界，请使用较新的浏览器。");
+    }
+    context.fillStyle = "#f5efe2";
+    context.fillText(character, (resolution + left - right) / 2, (resolution + ascent - descent) / 2);
+    const image = context.getImageData(0, 0, resolution, resolution);
+    const mask = new Uint8Array(resolution * resolution);
+    let minX = resolution, minY = resolution, maxX = -1, maxY = -1;
+    for (let y = 0; y < resolution; y++) {
+      for (let x = 0; x < resolution; x++) {
+        const i = y * resolution + x;
+        if (image.data[i * 4 + 3] < 128) continue;
+        mask[i] = 1;
+        minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      }
+    }
+    if (maxX < 0) throw new Error("未能从“" + character + "”中读取可书写字形。");
+    const centerX = (minX + maxX) / 2, centerY = (minY + maxY) / 2;
+    const span = Math.max(maxX - minX, maxY - minY, 1);
+    const paths = HeitiSkeleton.extract(mask, resolution, resolution, {
+      minBranchLength: Math.max(1.5, resolution / 192), simplifyTolerance: resolution / 512
+    });
+    if (!paths.length) throw new Error("“" + character + "”的中线提取失败。");
+    const strokes = paths.map((path) => path.map(([x, y]) => [(x - centerX) / span, (centerY - y) / span]));
+    const glyph = { strokes, canvas, centerX, centerY, span, resolution };
+    state.cache.set(key, glyph);
+    return glyph;
+  }
+
+  function drawReference(context, pixel, scale) {
+    if (!el.showReference.checked || !state.settings) return;
+    const cfg = state.settings;
+    context.save();
+    context.globalAlpha = 0.19;
+    state.glyphs.forEach((glyph, index) => {
+      const centerY = cfg.centerY + (0.5 * (cfg.characters.length - 1) - index) * (cfg.size + cfg.gap);
+      const center = pixel({ y: centerY, z: cfg.centerZ });
+      const factor = cfg.size * scale / glyph.span;
+      context.drawImage(glyph.canvas, center.x - glyph.centerX * factor,
+        center.y - glyph.centerY * factor, glyph.resolution * factor, glyph.resolution * factor);
+    });
+    context.restore();
+  }
+
+  async function busy(action) {
+    if (state.pending) return false;
+    state.pending = true;
+    el.generate.disabled = el.loadFont.disabled = el.fontFile.disabled = el.download.disabled = true;
+    try { await action(); return true; }
+    catch (error) {
+      setStatus(error instanceof Error ? error.message : String(error), true);
+      return false;
+    } finally {
+      state.pending = false;
+      el.generate.disabled = el.loadFont.disabled = el.fontFile.disabled = false;
+      el.download.disabled = !state.points.length;
+    }
+  }
+
+  async function generate() {
+    return busy(async () => {
+      const cfg = readConfig();
+      await ensureFont();
+      const glyphs = [];
+      for (const character of cfg.characters) {
+        setStatus("正在提取“" + character + "”的黑体单线中线…");
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        glyphs.push(rasterGlyph(character, cfg.resolution));
+      }
+      const points = makeTrajectory(cfg, glyphs.map((glyph) => glyph.strokes));
+      state.points = points;
+      state.bounds = calculateBounds(points);
+      state.settings = cfg;
+      state.glyphs = glyphs;
+      draw();
+      const paths = glyphs.reduce((count, glyph) => count + glyph.strokes.length, 0);
+      setStatus("已生成 " + points.length + " 个有序点\n单线路径：" + paths +
+        " 段（非传统笔顺）\ny_C：" + state.bounds.minY.toFixed(3) + " ~ " + state.bounds.maxY.toFixed(3) +
+        " m\nz_C：" + state.bounds.minZ.toFixed(3) + " ~ " + state.bounds.maxZ.toFixed(3) + " m");
+    });
+  }
+
+  async function download() {
+    if (!state.points.length && !(await generate())) return;
+    const content = JSON.stringify(state.points, null, 2) + "\n";
+    const url = URL.createObjectURL(new Blob([content], { type: "application/json;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "points_c_heiti.json";
+    document.body.appendChild(link); link.click(); link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  el.loadFont.addEventListener("click", () => busy(async () => {
+    await ensureFont(); setStatus("黑体字库已就绪，请设置文字并生成轨迹。");
+  }));
+  el.fontFile.addEventListener("change", () => {
+    const file = el.fontFile.files[0];
+    if (!file) return;
+    busy(async () => {
+      if (!/\.(otf|ttf)$/i.test(file.name) || file.size > 50 * 1024 * 1024) {
+        throw new Error("请导入不超过 50 MB 的 .otf 或 .ttf 字体文件。");
+      }
+      await installFont(await file.arrayBuffer(), "已导入：" + file.name);
+      setStatus("本地字体已就绪；点击生成轨迹应用当前字库。");
+    }).finally(() => { el.fontFile.value = ""; });
+  });
+  el.generate.addEventListener("click", generate);
+  el.download.addEventListener("click", download);
+  for (const name of ["zoom", "showPoints", "showMoves", "showReference"]) {
+    el[name].addEventListener("change", draw);
+  }
+  document.addEventListener("hanzi-mode-change", (event) => { if (event.detail === "heiti") draw(); });
+  window.addEventListener("resize", draw);
+  el.download.disabled = true;
+  setStatus("输入文字，点击生成黑体单线轨迹。首次使用需加载字库，也可导入本地字体。");
+})();
+
+</script>
+<!-- HEITI_CODE_END -->
 </body>
 </html>
