@@ -189,7 +189,6 @@ function renderText() {
   $("#education-title").textContent = localized(content.site.sections.education);
   $("#experience-title").textContent = localized(content.site.sections.experience);
   $("#contact-title").textContent = localized(content.site.sections.contact);
-  $("#publications-note").textContent = localized(content.site.publicationsNote);
   $("#footer-copyright").textContent = localized(content.footer.copyright);
   $("#footer-update").textContent = localized(content.footer.updated);
   $("#language-toggle").textContent = state.lang === "zh" ? "EN" : "中";

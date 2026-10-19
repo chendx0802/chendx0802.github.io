@@ -17,10 +17,6 @@ window.SITE_CONTENT = {
       experience: { zh: "工作与实习", en: "Experience" },
       contact: { zh: "给我留言", en: "Leave a Message" },
     },
-    publicationsNote: {
-      zh: "把你的项目、论文或作品放在这里",
-      en: "Projects, papers, and selected work",
-    },
   },
 
   profile: {
