@@ -10,9 +10,9 @@
     <meta name="color-scheme" content="light dark" />
     <title>Dingxiong Chen · 陈丁熊</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=20261013-1" />
-    <script src="content.js?v=20261013-1" defer></script>
-    <script src="script.js?v=20261013-1" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261019-1" />
+    <script src="content.js?v=20261019-1" defer></script>
+    <script src="script.js?v=20261019-1" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到正文</a>
@@ -139,6 +139,14 @@
         <p id="footer-update"></p>
       </footer>
     </div>
+
+    <dialog class="video-dialog" id="project-video-dialog" aria-labelledby="project-video-title">
+      <div class="video-dialog-toolbar">
+        <h2 id="project-video-title"></h2>
+        <button id="project-video-close" type="button" aria-label="Close video" autofocus>×</button>
+      </div>
+      <video id="project-full-video" controls playsinline preload="none"></video>
+    </dialog>
 
     <noscript>
       <p class="noscript-message">请启用 JavaScript 以显示网站内容。</p>

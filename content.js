@@ -129,8 +129,8 @@ window.SITE_CONTENT = {
     {
       date: "2026.10",
       text: {
-        zh: "在这里写一条最近动态，例如发布了一个新项目。",
-        en: "Add a recent update here, such as releasing a new project.",
+        zh: "更新空中具身机器人实验演示视频。",
+        en: "Added an aerial embodied robotics experiment video.",
       },
       highlight: { zh: "新项目", en: "New project" },
       url: "#publications",
@@ -158,26 +158,24 @@ window.SITE_CONTENT = {
   publications: [
     {
       title: {
-        zh: "项目一：把这里替换成你的项目或论文标题",
-        en: "Project One: Replace This with Your Project or Paper Title",
+        zh: "空中具身机器人实验演示",
+        en: "Aerial Embodied Robotics Experiment",
       },
-      authors: { zh: "陈丁熊, 合作者 A, 合作者 B", en: "Dingxiong Chen, Collaborator A, Collaborator B" },
-      venue: { zh: "会议 / 期刊 · 2026", en: "Conference / Journal · 2026" },
+      authors: { zh: "陈丁熊", en: "Dingxiong Chen" },
+      venue: { zh: "项目演示 · 2026.10", en: "Project Demo · 2026.10" },
       summary: {
-        zh: "用一两句话说明这个项目解决了什么问题、采用了什么方法，以及取得了什么结果。",
-        en: "In one or two sentences, explain the problem, approach, and the main outcome of this work.",
+        zh: "空中具身机器人实验记录。点击视频封面观看完整演示。",
+        en: "Experimental footage of aerial embodied robotics. Select the preview to watch the full demonstration.",
       },
       media: {
-        type: "image",
-        src: "assets/project-placeholder.svg",
-        alt: { zh: "项目一演示", en: "Project one preview" },
+        type: "video",
+        src: "assets/videos/aerial-robot-202610.mp4",
+        preview: "assets/videos/aerial-robot-202610-preview.mp4",
+        poster: "assets/videos/aerial-robot-202610-poster.jpg",
+        alt: { zh: "空中具身机器人实验演示", en: "Aerial embodied robotics experiment preview" },
       },
-      badge: { zh: "代表作", en: "Featured" },
-      links: [
-        { label: { zh: "项目主页", en: "Project" }, url: "#" },
-        { label: { zh: "论文", en: "Paper" }, url: "#" },
-        { label: { zh: "代码", en: "Code" }, url: "#" },
-      ],
+      badge: { zh: "新项目", en: "New Project" },
+      links: [],
     },
     {
       title: {

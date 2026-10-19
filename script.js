@@ -93,11 +93,15 @@ function renderMedia(media, index) {
   const alt = escapeHtml(localized(media.alt));
 
   if (media.type === "video") {
+    const preview = escapeHtml(media.preview || media.src);
+    const label = state.lang === "zh" ? "播放完整视频" : "Watch full video";
     return `
-      <video class="publication-media" autoplay muted loop playsinline preload="metadata"
-        aria-label="${alt}">
-        <source src="${src}" type="video/mp4" />
-      </video>`;
+      <button class="video-preview" type="button" data-video-index="${index}" aria-label="${label}: ${alt}">
+        <video class="publication-media" autoplay muted loop playsinline preload="metadata" tabindex="-1" aria-hidden="true"${media.poster ? ` poster="${escapeHtml(media.poster)}"` : ""}>
+          <source src="${preview}" type="video/mp4" />
+        </video>
+        <span class="video-preview-label"><span aria-hidden="true">▶</span> ${label}</span>
+      </button>`;
   }
 
   return `<img class="publication-media" src="${src}" alt="${alt}" width="640" height="360" loading="lazy" />`;
@@ -234,6 +238,40 @@ $("#theme-toggle").addEventListener("click", () => {
 
 applyTheme();
 render();
+
+const videoDialog = $("#project-video-dialog");
+const fullVideo = $("#project-full-video");
+
+$("#publication-list").addEventListener("click", (event) => {
+  const trigger = event.target.closest(".video-preview");
+  if (!trigger) return;
+  const item = content.publications[Number(trigger.dataset.videoIndex)];
+  if (item?.media?.type !== "video") return;
+  $("#project-video-title").textContent = localized(item.title);
+  $("#project-video-close").setAttribute("aria-label", state.lang === "zh" ? "关闭视频" : "Close video");
+  document.querySelectorAll(".video-preview video").forEach((video) => video.pause());
+  fullVideo.src = item.media.src;
+  fullVideo.poster = item.media.poster || "";
+  fullVideo.muted = false;
+  fullVideo.loop = false;
+  videoDialog.showModal();
+  document.body.classList.add("video-dialog-open");
+  fullVideo.play().catch(() => {});
+});
+
+$("#project-video-close").addEventListener("click", () => videoDialog.close());
+videoDialog.addEventListener("click", (event) => {
+  if (event.target !== videoDialog) return;
+  const bounds = videoDialog.getBoundingClientRect();
+  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) videoDialog.close();
+});
+videoDialog.addEventListener("close", () => {
+  fullVideo.pause();
+  fullVideo.removeAttribute("src");
+  fullVideo.load();
+  document.body.classList.remove("video-dialog-open");
+  document.querySelectorAll(".video-preview video").forEach((video) => video.play().catch(() => {}));
+});
 
 const messageForm = $("#message-form");
 const submitButton = $("#message-submit");
