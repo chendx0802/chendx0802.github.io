@@ -164,8 +164,8 @@ window.SITE_CONTENT = {
       authors: { zh: "陈丁熊", en: "Dingxiong Chen" },
       venue: { zh: "项目演示 · 2026.10", en: "Project Demo · 2026.10" },
       summary: {
-        zh: "空中具身机器人实验记录。点击视频封面观看完整演示。",
-        en: "Experimental footage of aerial embodied robotics. Select the preview to watch the full demonstration.",
+        zh: "基于 ESO 扰动估计的非共面六旋翼搭载 Delta 机械臂的写字任务演示。",
+        en: "Demonstration of a writing task using a non-coplanar hexarotor equipped with a Delta manipulator and ESO-based disturbance estimation.",
       },
       media: {
         type: "video",
