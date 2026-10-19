@@ -12,7 +12,7 @@ window.SITE_CONTENT = {
     },
     sections: {
       activities: { zh: "最近动态", en: "Recent Activities" },
-      publications: { zh: "精选项目与论文", en: "Selected Work" },
+      publications: { zh: "精选项目与论文", en: "My Work" },
       education: { zh: "教育经历", en: "Education" },
       experience: { zh: "工作与实习", en: "Experience" },
       contact: { zh: "给我留言", en: "Leave a Message" },
