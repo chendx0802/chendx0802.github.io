@@ -158,8 +158,8 @@ window.SITE_CONTENT = {
   publications: [
     {
       title: {
-        zh: "空中具身机器人实验演示",
-        en: "Aerial Embodied Robotics Experiment",
+        zh: "空中具身机器人自主写字任务演示",
+        en: "Aerial Embodied Robot: Autonomous Writing Demonstration",
       },
       authors: { zh: "陈丁熊", en: "Dingxiong Chen" },
       venue: { zh: "项目演示 · 2026.10", en: "Project Demo · 2026.10" },
@@ -172,7 +172,7 @@ window.SITE_CONTENT = {
         src: "assets/videos/aerial-robot-202610.mp4",
         preview: "assets/videos/aerial-robot-202610-preview.mp4",
         poster: "assets/videos/aerial-robot-202610-poster.jpg",
-        alt: { zh: "空中具身机器人实验演示", en: "Aerial embodied robotics experiment preview" },
+        alt: { zh: "空中具身机器人自主写字任务演示", en: "Aerial embodied robot autonomous writing preview" },
       },
       badge: { zh: "新项目", en: "New Project" },
       links: [],
