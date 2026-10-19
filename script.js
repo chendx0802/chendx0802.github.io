@@ -110,7 +110,7 @@ function renderMedia(media, index) {
 function renderPublications() {
   $("#publication-list").innerHTML = content.publications
     .map(
-      (item, index) => `
+      (item, index) => item.hidden ? "" : `
         <article class="publication-card">
           <div class="publication-visual">
             ${renderMedia(item.media, index)}

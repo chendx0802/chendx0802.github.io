@@ -182,6 +182,7 @@ window.SITE_CONTENT = {
         zh: "项目二：这里可以放动态 WebP 或 MP4",
         en: "Project Two: Use an Animated WebP or MP4 Here",
       },
+      hidden: true,
       authors: { zh: "陈丁熊, 合作者 C", en: "Dingxiong Chen, Collaborator C" },
       venue: { zh: "个人项目 · 2025", en: "Personal Project · 2025" },
       summary: {
