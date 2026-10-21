@@ -117,6 +117,10 @@ window.SITE_CONTENT = {
         label: { zh: "Google Scholar", en: "Google Scholar" },
         url: "https://scholar.google.com/",
       },
+      {
+        label: { zh: "bilibili", en: "bilibili" },
+        url: "https://space.bilibili.com/471606915",
+      },
       { label: { zh: "联系我", en: "Contact Me" }, url: "#contact" },
     ],
   },
